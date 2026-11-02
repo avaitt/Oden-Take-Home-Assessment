@@ -7848,7 +7848,7 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 </tr>
 <tr>
 <td>A brief description of your assumptions</td>
-<td>section 9 (incl. every filter used to score the holdout machines, and why alerts after a repair are muted)</td>
+<td>section 9 (incl. how the rules are tested: built on dev, tested on holdout, no leakage)</td>
 </tr>
 <tr>
 <td>The data source, with enough detail to reproduce</td>
@@ -7921,35 +7921,35 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 <tbody>
 <tr>
 <th>01_dataset_and_parameters</th>
-<td>2026-11-02 02:46:24</td>
+<td>2026-11-02 03:22:54</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>02_candidates</th>
-<td>2026-11-02 02:46:28</td>
+<td>2026-11-02 03:22:57</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>03_ml_benchmark</th>
-<td>2026-11-02 02:48:04</td>
+<td>2026-11-02 03:24:33</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>04_test_and_select</th>
-<td>2026-11-02 02:57:24</td>
+<td>2026-11-02 03:33:40</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>05_audit</th>
-<td>2026-11-02 02:57:38</td>
+<td>2026-11-02 03:33:54</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
@@ -7997,39 +7997,27 @@ numbers as optimistic and the method as the transferable result.</p>
 <tbody>
 <tr>
 <td><strong>Event</strong></td>
-<td>what we want to warn about: a component failure. Failures on the same machine at the same hour count as one event (the brief's rule). "Any failure" is the main target; each part (comp1–comp4) is also run on its own.</td>
+<td>a component failure. Failures on the same machine at the same hour count as one event (the brief's rule). "Any failure" is the main target; each part (comp1–comp4) is also run on its own.</td>
 </tr>
 <tr>
-<td><strong>Precursor / detector</strong></td>
-<td>a pattern that tends to come before an event, written as a simple yes/no rule that is checked every hour ("alert" or "no alert").</td>
+<td><strong>Precursor / rule</strong></td>
+<td>a pattern that tends to come before a failure, written as a simple yes/no rule checked every hour ("alert" or "no alert").</td>
 </tr>
 <tr>
-<td><strong>H (lead time)</strong> and <strong>W (window)</strong></td>
-<td>for a failure at time T, an alert counts if it falls between T − (H + W) and T − H. <strong>H = 12, W = 36</strong> (the window used here) means "between 48 and 12 hours before the failure".</td>
+<td><strong>H and W</strong></td>
+<td>for a failure at time T, an alert counts if it falls between T − (H + W) and T − H. Here <strong>H = 12, W = 36</strong>: an alert counts if it comes between 48 and 12 hours before the failure.</td>
 </tr>
 <tr>
 <td><strong>Normal operation</strong></td>
-<td>hours far from any failure: not in any failure's window, not in the 24 h after a failure or repair, and not in the first 24 h of data.</td>
-</tr>
-<tr>
-<td><strong>Alert line</strong> (threshold)</td>
-<td>a <strong>fixed number</strong> that one condition of a rule is compared against. Every hour the rule computes a quantity (e.g. a sensor's 6 h average, or how many error codes were logged in the last 24 h), and the condition is <strong>on</strong> when that quantity is past the line in the fault direction (above it; below it for rotation). A rule alerts in the hours when <strong>both</strong> of its conditions are on. Lines are set once from normal running, so that normal hours almost never cross them, and then held fixed. Section 9, "How the alert lines are set", gives the exact formulas.</td>
-</tr>
-<tr>
-<td><strong>Smoothing</strong></td>
-<td>cleaning up a jittery reading before comparing it to the line, e.g. a <strong>6 h average</strong> (the mean of the last 6 hours).</td>
-</tr>
-<tr>
-<td><strong>Variant</strong></td>
-<td>one concrete version of an idea (e.g. "pressure, 6 h average, per-machine line at P99"). Each idea is tried in 20–95 variants, 655 in total.</td>
+<td>hours far from any failure: not in the 48 h before one, not in the 24 h after a failure or repair, and not in the first 24 h of data.</td>
 </tr>
 <tr>
 <td><strong>Lift</strong></td>
-<td>how much more often a detector fires before failures than in normal operation (2 = twice as often).</td>
+<td>how much more often a rule fires before failures than in normal operation (2 = twice as often).</td>
 </tr>
 <tr>
 <td><strong>Precision</strong></td>
-<td>of the alerts it raises, the share followed by a failure within H + W.</td>
+<td>of the alerts a rule raises, the share followed by a failure in time.</td>
 </tr>
 <tr>
 <td><strong>Coverage</strong></td>
@@ -8037,42 +8025,29 @@ numbers as optimistic and the method as the transferable result.</p>
 </tr>
 <tr>
 <td><strong>F1</strong></td>
-<td>the single score used to pick detectors: <code>2 × precision × coverage / (precision + coverage)</code>. It is high only when <em>both</em> are high, so it can't be gamed by never firing (which inflates lift) or always firing (which inflates coverage).</td>
+<td>the single score used to pick rules: <code>2 × precision × coverage / (precision + coverage)</code>. It is high only when <em>both</em> are high, so it can't be gamed by never firing or always firing.</td>
 </tr>
 <tr>
 <td><strong>Dev / holdout machines</strong></td>
-<td>the 100 machines are split 50/50. Every choice is made on the <strong>dev</strong> machines; every reported number comes from the <strong>holdout</strong> machines, which never influenced a choice.</td>
-</tr>
-<tr>
-<td><strong>Gate</strong></td>
-<td>a pass/fail test that a candidate must pass before it can be kept, however good its F1. See below.</td>
+<td>the 100 machines are split 50/50. The rules are <strong>built and tuned on the dev machines</strong> and <strong>tested on the holdout machines</strong>, which play no part in building them.</td>
 </tr>
 <tr>
 <td><strong>Look-alike drift</strong></td>
-<td>a signal shift that looks exactly like a pre-failure shift but isn't followed by a failure (~470 per part per year).</td>
-</tr>
-<tr>
-<td><strong>Cluster bootstrap</strong></td>
-<td>how the 95% intervals are made: resample whole holdout machines, so failures on the same machine aren't treated as independent.</td>
+<td>a signal shift that looks like a pre-failure shift but isn't followed by a failure (~470 per part per year).</td>
 </tr>
 </tbody>
 </table>
-<h3 id="What-a-%22gate%22-is">What a "gate" is<a class="anchor-link" href="#What-a-%22gate%22-is">¶</a></h3><p>Picking the best-scoring idea isn't enough: with 655 variants tried, some will score well by luck or by
-accidentally using information from the future. So before ranking, every idea must pass <strong>four gates</strong>,
-all checked on dev machines:</p>
+<h3 id="What-a-%22gate%22-is">What a "gate" is<a class="anchor-link" href="#What-a-%22gate%22-is">¶</a></h3><p>With 655 versions of the ten ideas tried, some will score well by luck or by quietly using information from
+the future. So before ranking, every idea must pass <strong>four gates</strong> on the dev machines:</p>
 <ol>
-<li><strong>Not luck (null test).</strong> Each machine's alert timeline is shifted in time by a random amount, 500 times.
-That keeps how often and how burstily the detector fires, but breaks any real link to failures. The real
-detector must beat these shuffled copies by a wide margin. The bar is made stricter because we test ten
-ideas (a Bonferroni correction: p &lt; 0.05 / 10 = 0.005).</li>
-<li><strong>Lift ≥ 2.</strong> It must fire at least twice as often before failures as in normal operation.</li>
-<li><strong>Coverage ≥ 5%.</strong> It must catch a meaningful share of failures.</li>
-<li><strong>Causal check.</strong> Its thresholds are re-set using only January–June, then it is scored on July–December.
-It must keep at least half its F1. A rule whose skill quietly depends on the future collapses here.</li>
+<li><strong>Not luck:</strong> it must clearly beat copies of itself shifted randomly in time (which keep how often it fires but
+break any link to failures), with a stricter bar because ten ideas are tested.</li>
+<li><strong>Lift ≥ 2:</strong> it fires at least twice as often before failures as in normal operation.</li>
+<li><strong>Coverage ≥ 5%:</strong> it catches a meaningful share of failures.</li>
+<li><strong>Causal check:</strong> set up using only January–June, it must keep at least half its F1 on July–December.</li>
 </ol>
-<p>Ideas that pass all four are ranked by dev F1, and the top three are kept, skipping any that is the <strong>same
-alarm</strong> as a better one (sharing ≥ 80% of its firing hours). Nine of the ten ideas passed every gate; only
-C07 (overdue maintenance) failed, on the causal check.</p>
+<p>Ideas that pass are ranked by dev F1 and the top three kept (skipping any that is the same alarm as a better
+one). Nine of the ten passed every gate; only C07 (overdue maintenance) failed, on the causal check.</p>
 </div>
 </div>
 </div>
@@ -8480,16 +8455,16 @@ pointed the candidates toward "smoothed drift + error code".</li>
 <th>0</th>
 <td>ML: logistic regression</td>
 <td>0.627</td>
-<td>[0.59, 0.66]</td>
+<td>[0.59, 0.67]</td>
 <td>0.457</td>
 <td>0.997</td>
 </tr>
 <tr>
 <th>1</th>
 <td>ML: gradient boosting, no maintenance counters</td>
-<td>0.518</td>
-<td>[0.49, 0.55]</td>
-<td>0.349</td>
+<td>0.509</td>
+<td>[0.48, 0.54]</td>
+<td>0.342</td>
 <td>1.000</td>
 </tr>
 <tr>
@@ -8985,12 +8960,12 @@ is the fallback that needs no part ↔ code pairing.</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="The-three-rules,-written-out">The three rules, written out<a class="anchor-link" href="#The-three-rules,-written-out">¶</a></h3><p>Each rule is checked <strong>every hour on every machine</strong>. Shared definitions:</p>
+<h3 id="The-three-rules,-written-out">The three rules, written out<a class="anchor-link" href="#The-three-rules,-written-out">¶</a></h3><p>Each rule is checked <strong>every hour on every machine</strong>, and alerts when <strong>both</strong> of its conditions hold.</p>
 <ul>
-<li><strong>6 h average</strong>: the mean of the sensor's last 6 hourly readings.</li>
-<li><strong>Robust spread</strong> of a sensor: 1.4826 × the median absolute deviation of its 6 h average, from that machine's
-own readings (normal-operation hours for dev machines; all of its hours for holdout machines).</li>
-<li><strong>Each part's own sensor and error code(s)</strong>, learned from the dev machines:</li>
+<li><strong>6 h average:</strong> the mean of a sensor's last 6 hourly readings.</li>
+<li><strong>Usual level and spread:</strong> each machine's median reading and how much its readings normally vary
+(a robust standard deviation: 1.4826 × the median absolute deviation). A machine is compared with itself.</li>
+<li><strong>Each part's own sensor and error code(s):</strong></li>
 </ul>
 <table>
 <thead>
@@ -9023,28 +8998,26 @@ own readings (normal-operation hours for dev machines; all of its hours for hold
 </tr>
 </tbody>
 </table>
-<p><strong>C09 · Matched signature</strong> (the alarm to act on). Raise an alert when, <strong>for any one part</strong>, both hold:</p>
+<p><strong>C09 · Matched signature</strong> (the alarm to act on). For any one part:</p>
 <ol>
-<li>that part's sensor (6 h average) is <strong>more than 3.09 robust spreads</strong> from the machine's median, in the fault
-direction (the machine's P99.9 level). On a typical machine: voltage above ~190 (normal ~170), rotation
-below ~383 (normal ~449), pressure above ~113 (normal ~100), vibration above ~47 (normal ~40); <strong>and</strong></li>
-<li>that part's <strong>own error code</strong> has been logged <strong>at least once in the last 24 hours</strong>.</li>
+<li>its sensor's 6 h average is <strong>more than 3.09 spreads beyond the machine's usual level</strong>, in the fault direction
+(on a typical machine: voltage above ~190 vs ~170 usually, rotation below ~383 vs ~449, pressure above ~113 vs
+~100, vibration above ~47 vs ~40), <strong>and</strong></li>
+<li>that part's <strong>own error code</strong> was logged <strong>at least once in the last 24 hours</strong>.</li>
 </ol>
-<p><strong>C08 · Drift + any error</strong> (the fallback). Raise an alert when both hold:</p>
+<p><strong>C08 · Drift + any error</strong> (the fallback):</p>
 <ol>
-<li><strong>any</strong> of the four sensors (6 h average) is <strong>more than 3.72 robust spreads</strong> from the machine's median, in
-its fault direction (P99.99: on a typical machine voltage above ~194, rotation below ~370, pressure above
-~116, vibration above ~48); <strong>and</strong></li>
-<li><strong>any</strong> error code has been logged <strong>at least once in the last 48 hours</strong>.</li>
+<li><strong>any</strong> of the four sensors' 6 h average is <strong>more than 3.72 spreads beyond the machine's usual level</strong>, in its
+fault direction, <strong>and</strong></li>
+<li><strong>any</strong> error code was logged <strong>at least once in the last 48 hours</strong>.</li>
 </ol>
-<p><strong>C10 · Drift on an aging part</strong> (the early warning). Raise an alert when, <strong>for any one part</strong>, both hold:</p>
+<p><strong>C10 · Drift on an aging part</strong> (the early warning). For any one part:</p>
 <ol>
-<li>that part's sensor (6 h average) is <strong>more than 3.72 robust spreads</strong> from the machine's median, in the fault
-direction (the same level as C08); <strong>and</strong></li>
-<li>that part has gone <strong>longer since its last replacement than its median in normal running</strong>: about 33 days
-for comp1, 31 for comp2, 34 for comp3 and 33 for comp4.</li>
+<li>its sensor's 6 h average is <strong>more than 3.72 spreads beyond the machine's usual level</strong>, in the fault
+direction, <strong>and</strong></li>
+<li>the part has gone <strong>longer since its last replacement than usual</strong>: about 33 days for comp1, 31 for comp2,
+34 for comp3 and 33 for comp4.</li>
 </ol>
-<p>An alert is "on" for as long as the conditions hold; a new alert starts each time it switches from off to on.</p>
 </div>
 </div>
 </div>
@@ -9235,8 +9208,8 @@ runs, because training uses a random sample of normal hours.)</p>
 <tr>
 <th>4</th>
 <td>ML: gradient boosting, no maintenance counters</td>
-<td>0.518</td>
-<td>0.349</td>
+<td>0.509</td>
+<td>0.342</td>
 <td>1.000</td>
 </tr>
 <tr>
@@ -9286,17 +9259,13 @@ better choice unless a model clearly beats it, and here none does.</p>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="9-%C2%B7-Assumptions">9 · Assumptions<a class="anchor-link" href="#9-%C2%B7-Assumptions">¶</a></h2><ul>
 <li><strong>Failure timestamps mark the end of the degradation.</strong> They are logged in a daily 06:00 batch, but an
-hour-by-hour audit (notebook 01, section 3) finds no post-failure data before them, so the stamp is treated
-as the failure time. Failure-linked error codes are stamped the same way.</li>
-<li><strong>The repair logged with each failure is part of the failure,</strong> not a precursor. The failure hour itself is
-never scored.</li>
-<li><strong>Telemetry is a true hourly reading</strong> at its timestamp. Every feature uses only past hours (causal).</li>
+hour-by-hour check (notebook 01, section 3) finds no post-failure data before them.</li>
+<li><strong>The repair logged with each failure is part of the failure,</strong> not a precursor.</li>
+<li><strong>Telemetry is a true hourly reading</strong> at its timestamp, and every rule uses only past hours.</li>
 <li><strong>Machines run continuously</strong> (minimum rotation 138 rpm), so there is no idle mode to exclude.</li>
-<li><strong>Machines are exchangeable</strong> enough that 50 dev machines can inform 50 holdout machines (split stratified
-by machine model).</li>
-<li><strong>Alerts in the 24 h after a repair or replacement are muted</strong> (see "Why mute alerts after a repair" below).</li>
-<li><strong>The look-alike excursions</strong> (signal drifts with no failure after them) are real behaviour of this data,
-perhaps averted failures or simulator noise. They are not relabelled.</li>
+<li><strong>Machines are alike enough</strong> that 50 dev machines can inform 50 holdout machines (split within each model).</li>
+<li><strong>The look-alike drifts</strong> (signal shifts with no failure after them) are real behaviour of this data, perhaps
+averted failures or simulator noise. They are not relabelled.</li>
 </ul>
 </div>
 </div>
@@ -9307,127 +9276,24 @@ perhaps averted failures or simulator noise. They are not relabelled.</li>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="How-the-holdout-machines-are-scored:-every-filter,-stated">How the holdout machines are scored: every filter, stated<a class="anchor-link" href="#How-the-holdout-machines-are-scored:-every-filter,-stated">¶</a></h3><p>All reported numbers come from the <strong>50 holdout machines</strong> (half the fleet, split at random within each machine
-model, seed 7). These are the filters and assumptions applied when scoring them:</p>
-<table>
-<thead>
-<tr>
-<th>What</th>
-<th>Rule</th>
-<th>Why</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Which machines</td>
-<td>50 holdout machines; they never influenced any choice of idea, variant, threshold, part pairing or H and W</td>
-<td>an honest estimate of how the rules do on machines they haven't seen</td>
-</tr>
-<tr>
-<td>Which events</td>
-<td>failures on the same machine at the same hour are merged into one event; an event counts only if its window starts after the 24 h warm-up and has at least one scorable hour. <strong>350 of the 363 holdout events</strong> count</td>
-<td>the brief's definition of an event; a window that can't be observed can't be scored</td>
-</tr>
-<tr>
-<td>The failure hour</td>
-<td>never scored</td>
-<td>it contains the repair record, which would be a fake "precursor" (notebook 05, section 2)</td>
-</tr>
-<tr>
-<td>After a failure or replacement</td>
-<td>the next <strong>24 h are muted</strong>: alerts there don't count, and those hours are not "normal"</td>
-<td>see below</td>
-</tr>
-<tr>
-<td>Warm-up</td>
-<td>the first 24 h of the year are not scored</td>
-<td>see "Why ignore the warm-up and the end of the year?" below</td>
-</tr>
-<tr>
-<td>End of the year</td>
-<td>an alert in the last H + W hours is not judged</td>
-<td>see below</td>
-</tr>
-<tr>
-<td>Normal operation</td>
-<td>every hour that is not in the H + W hours before any failure and not muted</td>
-<td>the brief's definition; every line is set from dev machines' normal hours (holdout per-machine lines: see below)</td>
-</tr>
-<tr>
-<td>Alert lines</td>
-<td>sensor lines are set <strong>per machine</strong> from that machine's own readings (holdout machines: all of their hours, never their failure dates); error-count and part-age lines are <strong>one line for the fleet</strong>, set on dev machines only</td>
-<td>see "How the alert lines are set" below</td>
-</tr>
-<tr>
-<td>Error codes and part ages</td>
-<td>taken as logged</td>
-<td>assumed to be recorded at the hour they happen</td>
-</tr>
-</tbody>
-</table>
-<h3 id="Why-ignore-the-warm-up-and-the-end-of-the-year?">Why ignore the warm-up and the end of the year?<a class="anchor-link" href="#Why-ignore-the-warm-up-and-the-end-of-the-year?">¶</a></h3><p>Both are hours we can't score fairly, and both are small.</p>
+<h3 id="How-the-rules-are-tested-(no-leakage)">How the rules are tested (no leakage)<a class="anchor-link" href="#How-the-rules-are-tested-(no-leakage)">¶</a></h3><p><strong>Built on dev, tested on holdout.</strong> Everything is decided on the 50 dev machines: which ideas, their settings and
+cut-offs, which sensor and error codes belong to which part, the window, and the features the ML models lean on.
+The 50 holdout machines are used only to score the finished rules, and their failure dates are used only to grade
+the alerts. One subtlety: a sensor rule compares a machine with its <em>own</em> usual level. For a holdout machine that
+level comes from its own readings over the year, never from its failure dates. In real use it would come from
+past readings only; notebook 05, section 4 checks that rules set up from January–June still work on July–December.</p>
+<p><strong>What is scored</strong> (350 of the 363 holdout failures):</p>
 <ul>
-<li><strong>Warm-up (the first 24 hours of 2015).</strong> The rules use 6 h and 24 h averages and 24–48 h error counts. In the
-first day those don't have enough history yet: a "24 h average" at 3 a.m. on 1 January is really a 3-hour
-average. Events whose window would start before the data begins can't be scored either. On the holdout machines
-that is <strong>13 of 363 events</strong>, all stamped 2 January 2015 (their 48 h window would start in 2014).</li>
-<li><strong>End of the year (the last H + W hours, 48 h = 0.55% of the year).</strong> An alert there can't be judged: the data
-stops before we would know whether a failure followed. Counting it as a false alarm would wrongly lower
-precision, and counting it as correct would wrongly raise it, so it is left out (right-censoring). No failures
-are dropped; it only affects which alerts count toward precision.</li>
+<li><strong>The failure hour itself is never scored:</strong> it contains the repair record, which would be a fake "precursor".</li>
+<li><strong>The 24 h after a failure or repair are muted</strong> (alerts there don't count). Right after a repair the crew is
+already at the machine, and the readings reflect the restart, not normal running. It hides almost nothing:
+only 1 of 719 failures came within 24 h of the previous one, and muting 0 to 72 h barely changes the results
+(notebook 05, section 4).</li>
+<li><strong>The first 24 h of 2015 are not scored:</strong> the 6 h and 24 h averages and error counts need a day of history.
+The 13 holdout failures left out are all on 2 January 2015, whose window would start in 2014.</li>
+<li><strong>Alerts in the last 48 h of the year are not judged:</strong> the data ends before we would know whether a failure
+followed. No failures are dropped; it only affects which alerts count toward precision.</li>
 </ul>
-<h3 id="Why-mute-alerts-in-the-24-h-after-a-repair,-and-is-it-reasonable?">Why mute alerts in the 24 h after a repair, and is it reasonable?<a class="anchor-link" href="#Why-mute-alerts-in-the-24-h-after-a-repair,-and-is-it-reasonable?">¶</a></h3><p><strong>What it does.</strong> For 24 hours after any failure or any part replacement (scheduled or as a repair), alerts don't
-count, and those hours are left out of "normal operation". About 6% of all hours are muted this way.</p>
-<p><strong>Why.</strong></p>
-<ul>
-<li><strong>The crew is already there.</strong> Right after a repair, the machine has just been worked on. An alert in those hours
-would not tell anyone something new, and in practice operators silence alarms during maintenance and restart.</li>
-<li><strong>The readings aren't normal running.</strong> A machine that has just had a part replaced is being restarted and
-re-settled. Treating those hours as "normal" would distort the thresholds, and counting them as warnings would
-reward detectors for reacting to the repair itself.</li>
-<li><strong>It removes a leak.</strong> Failures and repairs are logged together, so post-repair behaviour is tied to the failure
-that just happened, not to the next one.</li>
-</ul>
-<p><strong>Is it reasonable? Yes, and the results don't depend on it.</strong></p>
-<ul>
-<li><strong>It hides almost nothing.</strong> Only <strong>1 of the 719 failures</strong> came within 24 hours of the previous failure on the
-same machine, so the mute almost never covers a real warning.</li>
-<li><strong>The exact length barely matters.</strong> Notebook 05, section 4 re-scores the kept rules with 0, 6, 24 and 72 hours
-of muting: C09's precision moves only from 0.92 to 0.94, and its coverage stays 0.91.</li>
-<li><strong>The risk to watch</strong> in a real plant is a bad repair that fails again within a day. If that matters, the mute
-can be shortened (the audit shows it costs little) or replaced by a separate "post-repair check" alarm.</li>
-</ul>
-<h3 id="How-the-alert-lines-are-set">How the alert lines are set<a class="anchor-link" href="#How-the-alert-lines-are-set">¶</a></h3><p>An <strong>alert line</strong> is a fixed number that one condition of a rule is compared against: every hour the rule
-computes a quantity, and the condition is on when the quantity is past the line in the fault direction. Every
-rule has two conditions, so two lines, and it alerts in the hours when both conditions are on.</p>
-<p><strong>1. The sensor condition uses a line per machine.</strong> Machines differ a little in their normal levels (one
-machine's voltage might hover around 168, another's around 172), so each machine gets its own line:</p>
-<blockquote>
-<p><strong>sensor line = median + k × robust spread</strong> (minus, for rotation, whose faults show as a drop)</p>
-</blockquote>
-<p>computed from that machine's 6 h averages, with <strong>k = 3.09 for C09</strong> and <strong>k = 3.72 for C08 and C10</strong>. The
-<strong>robust spread</strong> is 1.4826 × the median absolute distance of the readings from their median: a measure of how
-much the readings normally wobble that, like the median, barely moves when a few hours are unusual. (For
-bell-shaped readings, 3.09 and 3.72 spreads are the levels crossed only 0.1% and 0.01% of the time.) Example: a
-machine whose voltage averages 170 with a robust spread of 6.5 gets a C09 line of 170 + 3.09 × 6.5 ≈ 190.
-Which readings the median and spread come from:</p>
-<ul>
-<li><strong>Dev machines</strong> (used to build and tune the rules): their <strong>normal-operation hours</strong>, i.e. leaving out the
-hours just before a failure and just after a repair. That needs their failure dates, which is fine on dev.</li>
-<li><strong>Holdout machines</strong> (used only to score): <strong>all of their own hours</strong>. In deployment we wouldn't know in advance
-when a machine will fail, so we can't tell which of its hours were "normal"; scoring a holdout machine must not
-use its failure dates either. Because only ~4% of a machine's hours come just before a failure, and the median
-and robust spread shrug off a few unusual hours, the line ends up almost the same.</li>
-</ul>
-<p><strong>2. The error-count and part-age conditions use one line for the whole fleet,</strong> set from the dev machines'
-normal hours only:</p>
-<ul>
-<li><strong>Error count</strong> (C09: the part's own codes in the last 24 h; C08: any code in the last 48 h): the line is the
-80th percentile of that count in normal running, which is 0, so the condition means <strong>at least one error code</strong>.</li>
-<li><strong>Part age</strong> (C10: hours since the part was last replaced): the line is the median age in normal running, about
-<strong>31–34 days</strong> depending on the part.</li>
-</ul>
-<p>Holdout machines play no part in setting these lines.</p>
 </div>
 </div>
 </div>
@@ -9470,13 +9336,13 @@ version 3, five CSVs. It downloads automatically with
 </tr>
 <tr>
 <td><strong>Normal operation</strong></td>
-<td>not within H+W before <em>any</em> failure; not within 24 h after any failure or repair; not in the first 24 h</td>
-<td>the brief's definition, plus a recovery guardrail and a warm-up for trailing averages</td>
+<td>not in the 48 h before any failure; not in the 24 h after a failure or repair; not in the first 24 h</td>
+<td>the brief's definition, plus a recovery period and a warm-up for the averages</td>
 </tr>
 <tr>
-<td><strong>Thresholds</strong></td>
-<td>sensor lines per machine (median + robust spreads); error-count and part-age lines one per fleet</td>
-<td>chosen on dev machines' normal-operation hours, as the brief requires; a holdout machine's per-machine line comes from all its own hours so its failure dates are never used (section 9)</td>
+<td><strong>Cut-offs</strong></td>
+<td>sensors: a number of spreads beyond each machine's usual level; error codes: at least one; part age: longer than usual</td>
+<td>set on the dev machines from normal operation, as the brief requires (section 9)</td>
 </tr>
 <tr>
 <td>Selection</td>

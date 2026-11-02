@@ -693,10 +693,9 @@ def train_and_score(panel, bank, mk, dev, hold, rng, kind="hgb"):
     score = model.predict_proba(Xall)[:, 1].reshape(M, T)
     score[:, :24] = np.nan  # warm-up: rolling features not defined
 
-    # permutation importance measured on HOLDOUT machines (window hours vs a
-    # sample of normal hours), so it reflects what generalises, not what the
-    # model memorised
-    hs = np.zeros(M, bool); hs[hold] = True
+    # permutation importance measured on DEV machines (window hours vs a sample of normal hours): these
+    # importances fed the brainstorm of candidates, so holdout machines must play no part in them
+    hs = np.zeros(M, bool); hs[dev] = True
     hp = np.flatnonzero((mk.in_w & hs[:, None]).ravel())
     hn = np.flatnonzero((mk.normal & hs[:, None]).ravel())
     hn = rng.choice(hn, size=min(len(hn), 10 * len(hp)), replace=False)
