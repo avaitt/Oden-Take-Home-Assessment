@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oden take-home · Rule explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<style>
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 14px 0; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+  .step b { display: block; color: var(--accent); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 4px; }
+  .scenarios { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+  .scenarios button { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .scenarios button:hover { border-color: var(--accent); color: var(--accent); }
+  .scenarios button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .verdict { background: var(--accent-soft); border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: 15px; }
+  .verdict b { color: var(--accent); }
+  .delta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .controls label small { text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--muted); }
+  table.metrics td.good { color: var(--accent); font-weight: 600; }
+  table.metrics td.bad { color: var(--warn); font-weight: 600; }
+  .rules-plain { margin-top: 18px; }
+  .rules-plain b { color: var(--accent); }
+</style>
+</head>
+<body>
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="index.html">Precursors to failure <span>Oden take-home</span></a>
+    <nav>
+      <a href="index.html">Write-up</a>
+      <a href="rules.html" aria-current="page">Rule explorer</a>
+      <a href="machines.html">Machine explorer</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <h1>Rule explorer: what if we changed the rules?</h1>
+  <p class="lede">The write-up chose one warning window: an alarm counts if it comes <b>48 to 12 hours</b> before a
+    breakdown. Change it here, or focus on one part, and see how the three kept rules score on the <b>50 test
+    machines</b> they never saw.</p>
+
+  <div class="steps">
+    <div class="step"><b>Try 1</b>"No time to act": the score barely moves, so keeping 12 hours free costs nothing.</div>
+    <div class="step"><b>Try 2</b>"Two days to act": C09 collapses. Its error code arrives one day out, so it can't
+      warn earlier than that.</div>
+    <div class="step"><b>Try 3</b>Switch "Which breakdowns?" to a single part. C09 stays on top for every part.</div>
+  </div>
+
+  <div class="controls">
+    <label>Which breakdowns?
+      <select id="event">
+        <option value="any">any part</option>
+        <option value="comp1">comp1 (voltage)</option><option value="comp2">comp2 (rotation)</option>
+        <option value="comp3">comp3 (pressure)</option><option value="comp4">comp4 (vibration)</option>
+      </select>
+    </label>
+    <label>Hours kept free to act <small>(H)</small><select id="H"></select></label>
+    <label>Hours before that in which an alarm counts <small>(W)</small><select id="W"></select></label>
+  </div>
+  <div class="scenarios" id="scenarios" role="group" aria-label="Quick scenarios"></div>
+
+  <div class="verdict" id="verdict"></div>
+  <div class="table-wrap">
+    <table class="metrics">
+      <thead><tr><th>Rule</th><th>Breakdowns caught</th><th>Alarms that were real</th><th>Score (F1)</th>
+        <th>Typical warning</th><th>Alarms per machine per month</th><th>Lift</th></tr></thead>
+      <tbody id="results"></tbody>
+    </table>
+  </div>
+
+  <div class="rules-plain">
+    <div><b>C09 · Matched signature:</b> a part's <i>own</i> sensor is clearly off its normal <i>and</i> that <i>same
+      part's</i> error code was logged in the last 24 hours.</div>
+    <div><b>C08 · Drift + any error:</b> <i>any</i> sensor is clearly off <i>and</i> <i>any</i> error code was logged in
+      the last 48 hours.</div>
+    <div><b>C10 · Drift on an aging part:</b> a part's own sensor is clearly off <i>and</i> that part is overdue for
+      replacement. No error code needed, so earlier but noisier.</div>
+  </div>
+
+  <ul class="note" style="margin-top:18px">
+    <li><b>Score (F1)</b> folds "caught" and "real" into one number from 0 to 1; it is high only when both are
+      (<a href="index.html#s5-1">write-up, section 5.1</a>). The bracket is the range you'd expect from a different
+      draw of 50 test machines. <b>Lift</b> is how many times more often the rule fires before a breakdown than in
+      normal running.</li>
+    <li>The rules themselves never change as you move the controls; only the scoring window does. For a single part,
+      C09 and C10 watch only that part's own sensor, error code and age. Exact definitions:
+      <a href="index.html#appx-a2">appendix A.2</a>.</li>
+  </ul>
+</main>
+
+<script>
+const fmt = (v, d = 2) => (v === null || v === undefined) ? "–" : v.toFixed(d);
+const pct = v => (v === null || v === undefined) ? "–" : (100 * v).toFixed(0) + "%";
+const $ = id => document.getElementById(id);
+const SHORT = { C09: "Matched signature", C08: "Drift + any error", C10: "Drift on an aging part" };
+const PART = { any: "", comp1: "comp1 ", comp2: "comp2 ", comp3: "comp3 ", comp4: "comp4 " };
+const SCENARIOS = [
+  { H: 12, W: 36, label: "Chosen: half a day to act (H 12, W 36)" },
+  { H: 0,  W: 48, label: "No time to act (H 0, W 48)" },
+  { H: 24, W: 24, label: "A full day to act (H 24, W 24)" },
+  { H: 36, W: 12, label: "Two days to act (H 36, W 12)" },
+];
+let D, RULES;
+
+function render() {
+  const H = +$("H").value, W = +$("W").value, ev = $("event").value;
+  const c = RULES[ev][`${H},${W}`], chosen = RULES[ev][`${D.chosen.H},${D.chosen.W}`];
+  const onChosen = H === D.chosen.H && W === D.chosen.W;
+  for (const b of $("scenarios").children) b.setAttribute("aria-pressed", +b.dataset.h === H && +b.dataset.w === W);
+
+  const m = c.C09, tenth = Math.round(10 * m.precision);
+  const warn = m.lead === null ? "" : ` Typical warning: <b>${m.lead.toFixed(0)} hours</b> ahead.`;
+  let delta = "This is the window the write-up chose.";
+  if (!onChosen) {
+    const d = m.f1 - chosen.C09.f1;
+    delta = Math.abs(d) < 0.02 ? `About the same as the chosen window (F1 ${fmt(m.f1)} vs ${fmt(chosen.C09.f1)}): within the noise.`
+      : `${d < 0 ? fmt(-d) + " lower" : fmt(d) + " higher"} than the chosen window (F1 ${fmt(m.f1)} vs ${fmt(chosen.C09.f1)}).`;
+  }
+  $("verdict").innerHTML =
+    `With <b>${H} hours</b> kept free to act and alarms counting over the <b>${W} hours</b> before that, ` +
+    `C09 would catch <b>${pct(m.coverage)}</b> of the ${m.events} ${PART[ev]}breakdowns on the test machines, ` +
+    `and <b>${tenth} in 10</b> of its alarms would be real.${warn}<div class="delta">${delta}</div>`;
+
+  const best = Math.max(...D.rules.map(r => c[r].f1));
+  $("results").innerHTML = D.rules.map(r => {
+    const x = c[r];
+    return `<tr><td><span class="rule-id">${r}</span> ${SHORT[r]}${x.f1 === best ? " · best" : ""}</td>
+      <td class="${x.coverage >= 0.9 ? "good" : x.coverage < 0.5 ? "bad" : ""}">${pct(x.coverage)}</td>
+      <td class="${x.precision >= 0.85 ? "good" : x.precision < 0.5 ? "bad" : ""}">${pct(x.precision)}</td>
+      <td><b>${fmt(x.f1)}</b> <span class="note">[${fmt(x.f1_lo)}, ${fmt(x.f1_hi)}]</span></td>
+      <td>${x.lead === null ? "–" : x.lead.toFixed(0) + " h"}</td><td>${fmt(x.alerts_pm, 1)}</td><td>${fmt(x.lift, 0)}×</td></tr>`;
+  }).join("");
+}
+function setWindow(H, W) { $("H").value = H; $("W").value = W; render(); }
+
+fetch("data/rules.json").then(r => r.json()).then(d => {
+  D = d;
+  RULES = D.data[`${D.chosen.H},${D.chosen.W}`];
+  $("H").innerHTML = D.H.map(h => `<option>${h}</option>`).join("");
+  $("W").innerHTML = D.W.map(w => `<option>${w}</option>`).join("");
+  $("scenarios").innerHTML = SCENARIOS.map(s =>
+    `<button type="button" data-h="${s.H}" data-w="${s.W}" aria-pressed="false">${s.label}</button>`).join("");
+  for (const b of $("scenarios").children) b.onclick = () => setWindow(+b.dataset.h, +b.dataset.w);
+  ["event", "H", "W"].forEach(id => $(id).addEventListener("change", render));
+  setWindow(D.chosen.H, D.chosen.W);
+});
+</script>
+</body>
+</html>

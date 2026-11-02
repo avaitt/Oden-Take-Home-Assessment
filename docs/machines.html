@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oden take-home · Machine explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+  .seg button { border: 0 !important; border-radius: 0 !important; color: var(--muted) !important; padding: 7px 12px; }
+  .seg button + button { border-left: 1px solid var(--line) !important; }
+  .seg button[aria-pressed="true"] { background: var(--accent) !important; color: #fff !important; }
+  .yes { color: var(--accent); font-weight: 600; }
+  .no { color: var(--warn); font-weight: 600; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .tag.dev { background: #eef0ef; color: var(--muted); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 14px 0; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+  .step b { display: block; color: var(--accent); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 4px; }
+  .key { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; margin: 8px 0 14px; }
+  .key span { display: inline-flex; align-items: center; gap: 7px; }
+  .key i { display: inline-block; width: 14px; height: 14px; }
+  .k-line { border-top: 2px solid #6b7378; height: 0 !important; }
+  .k-err { width: 3px !important; background: #b76e00; }
+  .k-rep { width: 0 !important; height: 0 !important; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid #0e6170; }
+  .k-fail { color: #b03a3a; font-weight: 700; font-size: 16px; width: auto !important; height: auto !important; }
+  .k-real { border-radius: 50%; background: #2a78d6; }
+  .k-false { border-radius: 50%; border: 2px solid #2a78d6; width: 11px !important; height: 11px !important; }
+  .explain { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    border-radius: 10px; padding: 14px 18px; margin: 18px 0; }
+  .timeline { font-size: 12.5px; line-height: 1.6; background: var(--bg); border-radius: 8px; padding: 10px 12px;
+    overflow-x: auto; margin: 8px 0 0; }
+  .controls label small { text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="index.html">Precursors to failure <span>Oden take-home</span></a>
+    <nav>
+      <a href="index.html">Write-up</a>
+      <a href="rules.html">Rule explorer</a>
+      <a href="machines.html" aria-current="page">Machine explorer</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <h1>Machine explorer: watch C09 work on one machine</h1>
+  <p class="lede">One machine's whole year on one chart: a sensor's daily reading, every breakdown, and every alarm
+    <b>C09</b> would have raised. Stay on the <b>50 test machines</b>: the rule never saw them, so this is a fair
+    preview of a new machine.</p>
+
+  <div class="steps">
+    <div class="step"><b>Look for 1</b>Each red ✗ is a breakdown. Just to its left, a blue dot is C09 warning about
+      it, about a day ahead.</div>
+    <div class="step"><b>Look for 2</b>The grey line is the sensor for the part that breaks most on this machine.
+      It steps up (or down, for rotation) right before each ✗.</div>
+    <div class="step"><b>Look for 3</b>A hollow blue dot is a false alarm: no breakdown within the next 2 days. A
+      breakdown weeks later doesn't count. Three in four machines have two or fewer all year.</div>
+  </div>
+
+  <div class="controls">
+    <label>Machines
+      <span class="seg" role="group" aria-label="Which machines">
+        <button type="button" id="mode-hold" aria-pressed="true">Test machines (50)</button>
+        <button type="button" id="mode-all" aria-pressed="false">All 100</button>
+      </span>
+    </label>
+    <label>Machine<select id="machine"></select></label>
+    <label>Sensor <small>(auto-picks the part that breaks most)</small>
+      <select id="signal">
+        <option value="volt">voltage (comp1)</option><option value="rotate">rotation (comp2)</option>
+        <option value="pressure">pressure (comp3)</option><option value="vibration" selected>vibration (comp4)</option>
+      </select>
+    </label>
+    <button id="busiest" type="button">Machine with the most breakdowns</button>
+  </div>
+  <p class="summary-line" id="overall"></p>
+
+  <h2 id="machine-title">One machine</h2>
+  <p class="summary-line" id="summary"></p>
+  <div class="key">
+    <span><i class="k-line"></i> sensor, daily average</span>
+    <span><i class="k-err"></i> error code</span>
+    <span><i class="k-rep"></i> part replaced</span>
+    <span><i class="k-fail">✗</i> breakdown</span>
+    <span><i class="k-real"></i> C09 alarm, real</span>
+    <span><i class="k-false"></i> C09 alarm, false</span>
+  </div>
+  <div class="chart" id="plot"></div>
+  <p class="note">Hover a mark for details. Drag across a few days to zoom in; double-click to zoom out.</p>
+
+  <h3 style="font-size:15px;margin:20px 0 8px">This machine's breakdowns, and whether C09 warned in time</h3>
+  <div class="table-wrap"><table class="metrics" id="ftable"></table></div>
+  <p class="note" id="table-note"></p>
+
+  <div class="explain">
+    <h2 style="margin-top:0">Alarms are not breakdowns</h2>
+    <p>A <b>breakdown</b> (✗) is what actually happened: a part broke and was replaced. An <b>alarm</b> (●) is C09's
+      warning that one is coming. A breakdown counts as <b>caught</b> if an alarm came 48 to 12 hours before it, and
+      an alarm is <b>real</b> if a breakdown followed within 48 hours. One breakdown often gets two alarms, because
+      the sensor can dip under the line and cross it again; both are the same warning.</p>
+    <pre class="timeline">2 days before   the part's sensor goes off its normal     no alarm yet: C09 also needs the error code
+1 day before    the part's own error code is logged      alarm ●
+18 h before     the sensor dips under and re-crosses     alarm ●  (a repeat)
+breakdown       the part fails and is replaced           ✗  one breakdown, warned about 24 h ahead</pre>
+  </div>
+
+  <p class="note"><b>Test machines</b> played no part in building the rule; every choice was made on the other 50
+    (training) machines, which you can open with "All 100" for reference. Each part has one sensor that watches it
+    (comp1 voltage, comp2 rotation, comp3 pressure, comp4 vibration), and that sensor shifts in the two days before the
+    part fails.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NAMES = { volt: "voltage", rotate: "rotation", pressure: "pressure", vibration: "vibration" };
+const SIG = { comp1: "volt", comp2: "rotate", comp3: "pressure", comp4: "vibration" };
+const SPLIT = { dev: "training", holdout: "test" };
+const R = "C09", BLUE = "#2a78d6";
+const FONT = { family: "IBM Plex Sans, sans-serif" };
+let D, K, mode = "hold";
+
+const nFail = m => new Set((D.failures[m] || []).map(f => f[0])).size;   // same machine + hour = one event
+const toDate = t => new Date(t.replace(" ", "T"));
+function alertsPerFailure(m) {
+  const ft = [...new Set((D.failures[m] || []).map(f => f[0]))].sort(), out = Object.fromEntries(ft.map(t => [t, 0]));
+  for (const [t, real] of K.machines[m].alerts[R]) {
+    if (!real) continue;
+    const next = ft.find(f => toDate(f) > toDate(t));
+    if (next) out[next] += 1;
+  }
+  return out;
+}
+const ids = () => Object.keys(K.machines).map(Number).filter(m => mode === "all" || K.machines[m].split === "holdout")
+  .sort((a, b) => a - b);
+
+// The sensor for the part that breaks most on this machine (keeps the current one if it has no breakdowns).
+function pickSensor(m) {
+  const counts = {};
+  for (const [, comp] of (D.failures[m] || [])) counts[comp] = (counts[comp] || 0) + 1;
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  if (top) $("signal").value = SIG[top[0]];
+}
+
+function fillMachines(keep) {
+  const sel = $("machine");
+  sel.innerHTML = ids().map(m => `<option value="${m}">Machine ${m} · ${SPLIT[K.machines[m].split]} · ${nFail(m)} breakdowns</option>`).join("");
+  const busiest = ids().sort((a, b) => nFail(b) - nFail(a))[0];
+  $("busiest").textContent = `Machine with the most breakdowns (${busiest})`;
+  $("busiest").onclick = () => { sel.value = busiest; pickSensor(busiest); render(); };
+  sel.value = keep && ids().includes(keep) ? keep : busiest;
+  pickSensor(+sel.value);
+}
+
+function overallLine() {
+  const hold = Object.entries(K.machines).filter(([, k]) => k.split === "holdout");
+  const evs = hold.flatMap(([, k]) => k.events), caught = evs.filter(e => e.caught[R] !== null).length;
+  const al = hold.flatMap(([, k]) => k.alerts[R]), real = al.filter(a => a[1]).length;
+  const withF = hold.filter(([, k]) => k.events.length), every = withF.filter(([, k]) => k.events.every(e => e.caught[R] !== null)).length;
+  $("overall").textContent = `Across the 50 test machines: C09 warned about ${caught} of ${evs.length} breakdowns, ` +
+    `${al.length - real} false alarms in the whole year, and on ${every} of the ${withF.length} machines that broke down it caught every one.`;
+}
+
+function render() {
+  const m = +$("machine").value;
+  const s = $("signal").value, y = D.daily[s][m - 1];
+  const errs = D.errors[m] || [], reps = D.replacements[m] || [], fails = D.failures[m] || [];
+  const info = D.machines[m], k = K.machines[m];
+  const scored = Object.fromEntries(k.events.map(e => [e.time, e]));
+  const al = k.alerts[R], falseN = al.filter(a => !a[1]).length;
+  const nCaught = k.events.filter(e => e.caught[R] !== null).length;
+  $("machine-title").innerHTML = `Machine ${m} <span class="tag ${k.split === "dev" ? "dev" : ""}">${SPLIT[k.split]} machine</span>`;
+  $("summary").textContent = `${info.model}, ${info.age} years old · ${nFail(m)} breakdowns in 2015 · C09 warned about ` +
+    `${nCaught} of the ${k.events.length} it could be scored on · ${falseN} false alarm${falseN === 1 ? "" : "s"} all year` +
+    (k.split === "dev" ? " · training machine: the rule was built on it, so not a fair test" : "");
+
+  const vals = y.filter(v => v !== null), top = Math.max(...vals), low = Math.min(...vals);
+  const pad = (top - low) * 0.08 || 1, row = j => top + pad * j;
+  const marks = (list, name, j, symbol, color, size, text) => ({
+    type: "scatter", mode: "markers", name, x: list.map(e => e[0]), y: list.map(() => row(j)),
+    marker: { symbol, size, color, line: { width: 1.5, color } },
+    hovertemplate: `%{customdata}<br>%{x}<extra>${name}</extra>`, customdata: text || list.map(e => e[1])
+  });
+  const apf = alertsPerFailure(m);
+  const failText = fails.map(f => {
+    const e = scored[f[0]];
+    const how = !e ? "not scored (2 January: too early in the data)"
+      : e.caught[R] === null ? "C09: missed" : `C09: warned ${e.caught[R]} h ahead`;
+    return `${f[1]} broke<br>${how}<br>${apf[f[0]]} C09 alarm(s) in the 48 h before`;
+  });
+  Plotly.react("plot", [
+    { type: "scatter", mode: "lines", name: `${NAMES[s]} (daily average)`, x: D.days, y,
+      line: { color: "#6b7378", width: 1.5 }, hovertemplate: "%{x}<br>%{y:.1f}<extra></extra>" },
+    marks(errs, "error code", 1, "line-ns", "#b76e00", 10),
+    marks(reps, "part replaced", 2, "triangle-up", "#0e6170", 9),
+    marks(fails, "breakdown", 3, "x", "#b03a3a", 11, failText),
+    { type: "scatter", mode: "markers", name: "C09 alarm (filled = real, hollow = false)", x: al.map(v => v[0]),
+      y: al.map(() => row(4.2)),
+      marker: { symbol: al.map(v => v[1] ? "circle" : "circle-open"), size: 9, color: BLUE, line: { width: 1.5, color: BLUE } },
+      customdata: al.map(v => v[1] ? "real alarm: a breakdown followed within 48 h" : "false alarm: no breakdown within 48 h"),
+      hovertemplate: "%{customdata}<br>%{x}<extra>C09</extra>" },
+  ], {
+    title: { text: `Machine ${m}: ${NAMES[s]} through 2015, with breakdowns and C09's alarms`, font: { size: 15 } },
+    height: 500, margin: { l: 60, r: 20, t: 50, b: 50 }, hovermode: "closest",
+    yaxis: { title: NAMES[s], range: [low - pad, row(5)], gridcolor: "#eef0ef" }, xaxis: { title: "2015" },
+    legend: { orientation: "h", y: -0.16 }, font: FONT, paper_bgcolor: "#fff", plot_bgcolor: "#fff"
+  }, { responsive: true, displayModeBar: false });
+
+  $("ftable").innerHTML = `<thead><tr><th>When</th><th>Part that broke</th><th>Did C09 warn?</th><th>Alarms in the 48 h before</th></tr></thead><tbody>` +
+    (fails.length ? fails.map(f => {
+      const e = scored[f[0]];
+      const c = !e ? `<td class="note">not scored (too early in the data)</td>` : e.caught[R] === null ? `<td class="no">✗ missed</td>`
+        : `<td class="yes">✓ yes, ${e.caught[R]} h ahead</td>`;
+      return `<tr><td>${f[0]}</td><td>${f[1]}</td>${c}<td>${apf[f[0]]}</td></tr>`;
+    }).join("") : `<tr><td colspan="4" class="note">No breakdowns on this machine in 2015.</td></tr>`) + "</tbody>";
+  const dup = new Set(fails.map(f => f[0])).size < fails.length;
+  $("table-note").textContent = dup ? "Two parts breaking at the same hour count as one breakdown, so their alarms show on both rows." : "";
+}
+
+function setMode(next) {
+  mode = next;
+  $("mode-all").setAttribute("aria-pressed", mode === "all");
+  $("mode-hold").setAttribute("aria-pressed", mode === "hold");
+  fillMachines(+$("machine").value);
+  render();
+}
+
+Promise.all([fetch("data/machines.json").then(r => r.json()), fetch("data/catches.json").then(r => r.json())])
+  .then(([d, k]) => {
+    D = d; K = k;
+    overallLine();
+    $("mode-all").onclick = () => setMode("all");
+    $("mode-hold").onclick = () => setMode("hold");
+    $("machine").addEventListener("change", () => { pickSensor(+$("machine").value); render(); });
+    $("signal").addEventListener("change", render);
+    setMode("hold");
+  });
+</script>
+</body>
+</html>
