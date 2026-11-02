@@ -22,7 +22,7 @@ in a browser, no setup needed.
 | `notebooks/01_dataset_and_parameters.ipynb` | Dataset + Task 1 | the five raw CSVs; the dataset profile (events, sampling, gaps, regimes, counters); a timestamp audit; where the warning signs live; setting H, W and the event; confidence |
 | `notebooks/02_candidates.ipynb` | Task 2 | 10 candidate precursors, each with a physical story and a yes/no detector |
 | `notebooks/03_ml_benchmark.ipynb` | Task 2 ("an ML model") | the ML models used as an idea source and a ceiling, and why the simple rules win |
-| `notebooks/04_test_and_select.ipynb` | Task 3 | lift, precision and coverage for every candidate; guardrails; the shortlist and why it wins; **one F1 grid over 100 (H, W) windows**; the rules set for the chosen window, H = 12, W = 36 |
+| `notebooks/04_test_and_select.ipynb` | Task 3 | lift, precision and coverage for every candidate; guardrails; the shortlist and why it wins; **one F1 grid over 100 (H, W) windows**, which supports the window used throughout, H = 12, W = 36 |
 | `notebooks/05_audit.ipynb` | "What we look for" | trying to break the results (lucky picks, leakage, counters, time drift, regimes, clustering) |
 | `notebooks/06_writeup.ipynb` | Task 4 | **start here**: a standalone summary with the answer, key terms (incl. the gates), each notebook's key findings, the three rules written out, rejected candidates, how the rules were tested (no leakage), assumptions, design choices and next steps |
 
@@ -70,7 +70,7 @@ played no part in building them (no leakage). Numbers below are on the holdout m
 |---|---|---|---|---|---|---|
 | 1 | **C09 Matched signature** | a part's **own** sensor (6 h average) more than 3.09 spreads beyond its machine's usual level **and** that part's **own** error code logged in the last 24 h | **0.94** [0.92, 0.96] | 90% | 99% | ~24 h |
 | 2 | C08 Drift + any error | any sensor (6 h average) more than 3.72 spreads beyond its machine's usual level **and** any error code in the last 48 h | 0.74 [0.71, 0.78] | 63% | 91% | ~24 h |
-| 3 | C10 Drift on an aging part | a part's own sensor more than 3.72 spreads beyond its usual level **and** the part older than usual since its last replacement (31–34 days) | 0.56 [0.53, 0.60] | 41% | 89% | **~43 h** |
+| 3 | C10 Drift on an aging part | a part's own sensor more than 3.72 spreads beyond its usual level **and** the part older than usual since its last replacement (31–34 days) | 0.56 [0.52, 0.60] | 41% | 89% | **~43 h** |
 
 A random alarm would be right 4% of the time. Each part's signal drifts ~48 h before it fails, but ~470
 look-alike drifts per part never end in a failure. **The part's own error code tells them apart.** That is
@@ -136,8 +136,8 @@ Built with an AI coding assistant (Claude). Each of these was caught by a check,
 11. **Engineering slips:** a pandas name clash, read-only arrays, a masked leakage demo, and a freshness check
     fooled by file timestamps.
 12. **An overstated cost:** the claim that a 12-hour buffer "costs ~0.01 F1" was only checked on the dev grid.
-    The rule explorer showed the holdout picture was different, and the rules were then set for the chosen window
-    in notebook 04.
+    The rule explorer showed the holdout picture was different. The fix was to make H = 12, W = 36 the setting
+    for the whole project, so the rules are chosen, tested and audited on that window.
 13. **Leakage, raised by the user:** holdout machines' per-machine thresholds used their failure dates, and the ML
     feature importances that fed the brainstorm were measured on holdout machines. Both now avoid holdout labels.
 

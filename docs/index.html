@@ -7912,27 +7912,27 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 <tbody>
 <tr>
 <th>01_dataset_and_parameters</th>
-<td>2026-11-02 03:22:54</td>
+<td>2026-11-02 04:06:47</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>02_candidates</th>
-<td>2026-11-02 03:22:57</td>
+<td>2026-11-02 04:06:50</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>03_ml_benchmark</th>
-<td>2026-11-02 03:24:33</td>
+<td>2026-11-02 04:08:07</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>04_test_and_select</th>
-<td>2026-11-02 03:33:40</td>
+<td>2026-11-02 04:17:07</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>05_audit</th>
-<td>2026-11-02 03:33:54</td>
+<td>2026-11-02 04:17:22</td>
 <td>up to date</td>
 </tr>
 </tbody>
@@ -7950,7 +7950,7 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="1-%C2%B7-The-answer-in-one-paragraph">1 · The answer in one paragraph<a class="anchor-link" href="#1-%C2%B7-The-answer-in-one-paragraph">¶</a></h2><p>On the Azure Predictive Maintenance data (719 failure events, hourly readings, 100 machines, all of 2015),
 each part's own sensor signal shifts about <strong>48 hours</strong> before it fails. But each part's signal also shifts
-~470 times a year <em>without</em> a failure, so a sensor alone can't be trusted (at most ~38% of its alarms are real).
+~470 times a year <em>without</em> a failure, so a sensor alone can't be trusted (at most ~37% of its alarms are real).
 What separates real from false shifts is <strong>the part's own error code</strong>, logged 24 hours before the failure.
 Alerts are scored on a window of <strong>H = 12, W = 36</strong>: an alert counts if it comes between 48 and 12 hours before a
 failure, so every alert that counts leaves at least half a day to act. The strongest precursor, <strong>C09 "matched
@@ -8028,8 +8028,8 @@ are false, and the crew soon ignores it.</li>
 </ul>
 <p>What an operator needs is <strong>both</strong>: most failures caught (coverage) <em>and</em> most alarms real (precision). F1 combines
 the two as their harmonic mean, which stays low unless both are high. For example, when the ideas were compared,
-"any signal drifts" (C05) caught 99% of failures but only 28% of its alarms were real, so its F1 is just 0.44, even
-though a plain average of the two would flatter it at 0.64. The matched signature (C09) is high on both (90% of its
+"any signal drifts" (C05) caught 98% of failures but only 28% of its alarms were real, so its F1 is just 0.44, even
+though a plain average of the two would flatter it at 0.63. The matched signature (C09) is high on both (90% of its
 alarms real, 99% of failures caught) and scores 0.94. Lift is
 still checked (each rule must reach at least 2) and reported, but as a sanity check rather than the target.</p>
 <h3 id="What-a-%22gate%22-is">What a "gate" is<a class="anchor-link" href="#What-a-%22gate%22-is">¶</a></h3><p>With 655 versions of the ten ideas tried, some will score well by luck or by quietly using information from
@@ -8449,25 +8449,25 @@ pointed the candidates toward "smoothed drift + error code".</li>
 <tr>
 <th>0</th>
 <td>ML: logistic regression</td>
-<td>0.627</td>
-<td>[0.59, 0.67]</td>
-<td>0.457</td>
-<td>0.997</td>
+<td>0.629</td>
+<td>[0.59, 0.66]</td>
+<td>0.464</td>
+<td>0.974</td>
 </tr>
 <tr>
 <th>1</th>
 <td>ML: gradient boosting, no maintenance counters</td>
-<td>0.509</td>
+<td>0.512</td>
 <td>[0.48, 0.54]</td>
-<td>0.342</td>
+<td>0.344</td>
 <td>1.000</td>
 </tr>
 <tr>
 <th>2</th>
 <td>ML: gradient boosting, all features</td>
-<td>0.306</td>
-<td>[0.27, 0.34]</td>
-<td>0.181</td>
+<td>0.301</td>
+<td>[0.26, 0.34]</td>
+<td>0.177</td>
 <td>1.000</td>
 </tr>
 </tbody>
@@ -8537,9 +8537,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.918</td>
-<td>0.927</td>
-<td>0.909</td>
+<td>0.941</td>
+<td>0.898</td>
+<td>0.989</td>
 </tr>
 <tr>
 <th>0</th>
@@ -8547,9 +8547,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>2</td>
 <td>C08</td>
 <td>Drift confirmed by an error</td>
-<td>0.764</td>
+<td>0.744</td>
 <td>0.628</td>
-<td>0.977</td>
+<td>0.914</td>
 </tr>
 <tr>
 <th>2</th>
@@ -8557,9 +8557,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>3</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.566</td>
+<td>0.564</td>
 <td>0.413</td>
-<td>0.903</td>
+<td>0.889</td>
 </tr>
 <tr>
 <th>4</th>
@@ -8567,9 +8567,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.942</td>
+<td>0.926</td>
 <td>0.891</td>
-<td>1.000</td>
+<td>0.965</td>
 </tr>
 <tr>
 <th>5</th>
@@ -8577,9 +8577,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>2</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.574</td>
+<td>0.566</td>
 <td>0.406</td>
-<td>0.977</td>
+<td>0.930</td>
 </tr>
 <tr>
 <th>3</th>
@@ -8587,9 +8587,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>3</td>
 <td>C01</td>
 <td>Voltage creeps up</td>
-<td>0.376</td>
-<td>0.255</td>
-<td>0.721</td>
+<td>0.412</td>
+<td>0.266</td>
+<td>0.919</td>
 </tr>
 <tr>
 <th>8</th>
@@ -8597,9 +8597,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.945</td>
-<td>0.909</td>
-<td>0.985</td>
+<td>0.943</td>
+<td>0.899</td>
+<td>0.992</td>
 </tr>
 <tr>
 <th>7</th>
@@ -8607,9 +8607,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>2</td>
 <td>C08</td>
 <td>Drift confirmed by an error</td>
-<td>0.814</td>
+<td>0.778</td>
 <td>0.694</td>
-<td>0.985</td>
+<td>0.886</td>
 </tr>
 <tr>
 <th>6</th>
@@ -8617,9 +8617,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>3</td>
 <td>C06</td>
 <td>Any error code</td>
-<td>0.263</td>
+<td>0.234</td>
 <td>0.622</td>
-<td>0.167</td>
+<td>0.144</td>
 </tr>
 <tr>
 <th>10</th>
@@ -8627,9 +8627,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.909</td>
-<td>0.933</td>
-<td>0.887</td>
+<td>0.930</td>
+<td>0.869</td>
+<td>1.000</td>
 </tr>
 <tr>
 <th>11</th>
@@ -8637,9 +8637,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>2</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.365</td>
+<td>0.345</td>
 <td>0.323</td>
-<td>0.419</td>
+<td>0.371</td>
 </tr>
 <tr>
 <th>9</th>
@@ -8647,9 +8647,9 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <td>3</td>
 <td>C03</td>
 <td>Pressure builds</td>
-<td>0.110</td>
-<td>0.128</td>
-<td>0.097</td>
+<td>0.243</td>
+<td>0.159</td>
+<td>0.516</td>
 </tr>
 <tr>
 <th>13</th>
@@ -8704,7 +8704,7 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <ul>
 <li><strong>Luck from trying many ideas.</strong> Notebook 05 builds 300 fake rules from pure random noise (no link to failures
 at all), tunes them exactly like the real rules, and keeps the one that scores best on the dev machines. Even
-that "winner" scores only about <strong>0.09</strong> on dev and <strong>0.07</strong> on holdout, far below C09's 0.94. So picking the best
+that "winner" scores only about <strong>0.08</strong> on dev and on holdout, far below C09's 0.94. So picking the best
 of many tries manufactures almost no skill, and the kept rules also beat shuffled-in-time copies of themselves
 by a wide margin.</li>
 <li><strong>Leakage through the failure hour.</strong> Scoring the failure hour itself would turn "a repair was logged" into a
@@ -8712,7 +8712,7 @@ fake perfect rule; the failure hour is never scored.</li>
 <li><strong>Counters that leak the future.</strong> "Hours since maintenance" looks excellent until it may only use past data,
 then collapses; the causal gate rejects it (C07).</li>
 <li><strong>Time drift.</strong> Rules set up on January–June alone still work on July–December (table below).</li>
-<li><strong>Different machines.</strong> C09 works on every machine model and age band (precision 0.88–0.94, coverage 0.92–0.97).</li>
+<li><strong>Different machines.</strong> C09 works on every machine model and age band (precision 0.87–0.93, coverage 0.97–0.99).</li>
 <li><strong>Clustered failures.</strong> Too rare to matter (3 within a week of each other), and the intervals resample whole
 machines anyway.</li>
 </ul>
@@ -8756,17 +8756,17 @@ machines anyway.</li>
 <tbody>
 <tr>
 <th>Best of 300 rules built from random noise, picked on dev machines</th>
-<td>F1 0.09 on dev, 0.07 on holdout</td>
+<td>F1 0.08 on dev, 0.08 on holdout</td>
 <td>trying many rules finds almost nothing by luck</td>
 </tr>
 <tr>
 <th>C09: set up on Jan–Jun only, scored on Jul–Dec</th>
-<td>F1 0.87 (vs 0.92 set up on the full year)</td>
+<td>F1 0.93 (vs 0.93 set up on the full year)</td>
 <td>still works on months it has not seen</td>
 </tr>
 <tr>
 <th>C08: set up on Jan–Jun only, scored on Jul–Dec</th>
-<td>F1 0.75 (vs 0.75 set up on the full year)</td>
+<td>F1 0.74 (vs 0.73 set up on the full year)</td>
 <td>still works on months it has not seen</td>
 </tr>
 <tr>
@@ -9044,49 +9044,49 @@ direction, <strong>and</strong></li>
 <th>0</th>
 <td>C01</td>
 <td>Voltage creeps up</td>
-<td>0.283</td>
+<td>0.281</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>1</th>
 <td>C02</td>
 <td>Rotation sags</td>
-<td>0.390</td>
+<td>0.387</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>2</th>
 <td>C03</td>
 <td>Pressure builds</td>
-<td>0.246</td>
+<td>0.240</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>3</th>
 <td>C04</td>
 <td>Vibration rises</td>
-<td>0.288</td>
+<td>0.289</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>4</th>
 <td>C05</td>
 <td>Any signal drifts</td>
-<td>0.441</td>
+<td>0.440</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>5</th>
 <td>C06</td>
 <td>Any error code</td>
-<td>0.566</td>
+<td>0.546</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>6</th>
 <td>C07</td>
 <td>Overdue maintenance</td>
-<td>0.106</td>
+<td>0.000</td>
 <td>collapses with past-only thresholds (Jul–Dec F1 0.00 vs 0.05 with full-year thresholds): its skill leaks from the fu...</td>
 </tr>
 </tbody>
@@ -9157,43 +9157,43 @@ runs, because training uses a random sample of normal hours.)</p>
 <tr>
 <th>1</th>
 <td>rule: C09 Matched signature (part's own signal + own error)</td>
-<td>0.918</td>
-<td>0.927</td>
-<td>0.909</td>
+<td>0.941</td>
+<td>0.898</td>
+<td>0.989</td>
 </tr>
 <tr>
 <th>0</th>
 <td>rule: C08 Drift confirmed by an error</td>
-<td>0.764</td>
+<td>0.744</td>
 <td>0.628</td>
-<td>0.977</td>
+<td>0.914</td>
 </tr>
 <tr>
 <th>3</th>
 <td>ML: logistic regression</td>
-<td>0.627</td>
-<td>0.457</td>
-<td>0.997</td>
+<td>0.629</td>
+<td>0.464</td>
+<td>0.974</td>
 </tr>
 <tr>
 <th>2</th>
 <td>rule: C10 Drift on an aging part</td>
-<td>0.566</td>
+<td>0.564</td>
 <td>0.413</td>
-<td>0.903</td>
+<td>0.889</td>
 </tr>
 <tr>
 <th>4</th>
 <td>ML: gradient boosting, no maintenance counters</td>
-<td>0.509</td>
-<td>0.342</td>
+<td>0.512</td>
+<td>0.344</td>
 <td>1.000</td>
 </tr>
 <tr>
 <th>5</th>
 <td>ML: gradient boosting, all features</td>
-<td>0.306</td>
-<td>0.181</td>
+<td>0.301</td>
+<td>0.177</td>
 <td>1.000</td>
 </tr>
 </tbody>

@@ -5,13 +5,12 @@ build_site.py · Builds the project website in docs/ (served by GitHub Pages).
 
 It writes three things:
   * docs/index.html          the write-up (notebook 06, code hidden)
-  * docs/data/rules.json     the three kept rules (C08, C09, C10), with the settings notebook 04 chose for the
-                             H=12, W=36 window (section 7), scored on the holdout machines for every H, W and
-                             event on a grid, for docs/rules.html
+  * docs/data/rules.json     the three rules notebook 04 kept (C08, C09, C10, chosen for H=12, W=36), scored on
+                             the holdout machines for every H, W and event on a grid, for docs/rules.html
   * docs/data/machines.json  daily sensor means plus errors, replacements and failures for every machine,
                              for docs/machines.html
 
-The rules are the ones notebook 04 settled on for H=12, W=36 (read from outputs/04_test_and_select.json). Changing H, W or the event changes which hours count as "normal operation"
+The rules are the ones notebook 04 kept (read from outputs/04_test_and_select.json). Changing H, W or the event changes which hours count as "normal operation"
 (so the thresholds are re-fitted from those hours, as the brief requires) and which alerts count. For a
 single-part event, C09 and C10 use only that part's own signal and error codes or age.
 """
@@ -79,8 +78,9 @@ def _score_event(job) -> dict:
 def build_rules() -> None:
     t0 = time.time()
     saved = load_results("04_test_and_select")
-    dep = saved["deployment"]                    # notebook 04, section 7: the rules re-tuned for H=12, W=36 (dev)
-    tunings = {f"{dep['H']},{dep['W']}": {cid: dep["rules"][cid]["retuned_variant"] for cid in RULES}}
+    kept = {c["cid"]: c["variant"] for c in saved["kinds"]["any"]["concepts"] if c["status"] == "kept"}
+    H, W = saved["config"]["H"], saved["config"]["W"]   # the window the rules were chosen for (H=12, W=36)
+    tunings = {f"{H},{W}": {cid: kept[cid] for cid in RULES}}
     print("rule settings:", tunings)
     jobs = [(t, v, e) for t, v in tunings.items() for e in EVENTS]
     with ProcessPoolExecutor(max_workers=5) as ex:
@@ -90,7 +90,7 @@ def build_rules() -> None:
     for r in results:
         data[r["tuning"]][r["event"]] = r["cells"]; text[r["tuning"]][r["event"]] = r["rules"]
     out = dict(H=H_VALUES, W=W_VALUES, events=EVENTS, rules=RULES, titles=titles, tunings=list(tunings),
-               variants=tunings, chosen=dict(H=dep["H"], W=dep["W"]), data=data, rule_text=text)
+               variants=tunings, chosen=dict(H=H, W=W), data=data, rule_text=text)
     (DOCS / "data" / "rules.json").write_text(json.dumps(out, separators=(",", ":")))
     print(f"rules.json: {len(EVENTS)} events x {len(H_VALUES) * len(W_VALUES)} windows x 3 rules "
           f"in {time.time() - t0:.0f} s")

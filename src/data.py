@@ -43,18 +43,16 @@ class Config:
     # H: lead time. The scoring window ends H hours before the event.
     # W: window length. The window covers lags [H, H+W) hours before the event.
     #
-    # Why H=0, W=48 ("will it fail within the next 48 hours?"; scored lags 1..47, the failure hour
-    # itself is never scored). Chosen by F1 on the dev-only H x W grid (notebook 04, section 6):
-    #  * The framing "will it fail within the next N hours?" (H=0), with the smallest W at
-    #    which F1 reaches its plateau: W=48 (F1 0.945 vs 0.935 for a one-day window). The window then
-    #    covers the whole precursor, which starts ~48 h before a failure.
+    # Why H=12, W=36 (an alert counts if it comes 48 to 12 hours before the failure; scored lags 12..47):
+    #  * H=12: every alert that counts leaves at least half a day (one maintenance shift) to act.
+    #  * W=36: the window reaches back to where each part's signal starts drifting, ~48 h before a failure,
+    #    and contains the part's own error code (logged 24 h before), so it covers the whole precursor.
+    #  * On the dev-only H x W grid (notebook 04, section 6) it sits on the F1 plateau (0.936 vs 0.948 for the
+    #    best cell, within the noise); windows starting 36 h or more ahead collapse.
     #  * No leakage concern: an hour-by-hour audit (notebook 01, section 3) shows each part's signal
     #    stays shifted up to its 06:00 failure stamp and is back to normal one hour after it.
-    #  * In practice we would deploy with H=12, W=36, so every alert that counts leaves half a day
-    #    to act. With C09's threshold re-tuned for that window it scores F1 0.94 on holdout (0.92 at
-    #    H=0, W=48); left unchanged it drops to 0.81 (notebook 06, section 11).
-    H: int = 0
-    W: int = 48
+    H: int = 12
+    W: int = 36
 
     # Which event we look for precursors of. See EVENT_KINDS.
     event: str = "any"
