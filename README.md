@@ -113,17 +113,19 @@ I directed the analysis and made its key calls; the AI assistant wrote most of t
 * **Audits I asked for:** an hour-by-hour check of how failures are timestamped (which showed that a
   24 h lead isn't needed to avoid leakage), and repeated checks of the work against every requirement in the brief.
 
-## Where the AI assistant had to be corrected
+## Where the AI assistant had to be guided
 
 Built with an AI coding assistant (Claude). Each of these was caught and corrected by me:
 
-1. A claim the evidence contradicted: the first write-up said a grid confirmed W = 24. It didn't.
-2. H = 24 was never tested: an hour-by-hour audit removed its rationale. Choosing by F1, the grid showed that any window containing the 24 h error code works, and H = 12, W = 36 was chosen.
-3. An overstated cost: the claim that a 12-hour buffer "costs ~0.01 F1" was only checked on the dev grid. The rule explorer showed the holdout picture was different. The fix was to make H = 12, W = 36 the setting for the whole project.
-4. Count thresholds: "error count > P90" silently meant "≥ 2 errors", which only comp2 can meet. P80 ("≥ 1 error") was added.
-5. Redundancy rule: the first version threw out a detector if it caught the same failures as a better one, even when it warned earlier. It now drops only detectors that are the same alarm (firing in the same hours).
-6. Contaminated "normal": ~470 look-alike drifts per part hide inside "normal" hours and push a P99 threshold up into the very drifts we want to catch. This led to outlier-proof (median-based) thresholds, and to the main finding.
-7. Engineering slips: a pandas name clash, read-only arrays, a masked leakage demo, and a freshness check fooled by file timestamps.
+1. Claude scored the H × W grid on several metrics. I had it scored by F1 alone, for simplicity and coherence.
+2. Claude set a 24-hour lead on an untested assumption. I questioned it; the timestamp audit showed it had no basis.
+3. Claude chose H = 0, which leaves no time to act on an alert. I required a buffer, which led to H = 12, W = 36.
+4. Claude built holdout machines' thresholds from their own failure dates, and measured the ML feature importances on holdout machines. I caught the leakage, and both now use dev machines only.
+5. Claude claimed a 12-hour buffer "costs ~0.01 F1", having checked it only on the dev grid. I tested it on the rule explorer and found the holdout picture was different.
+6. Claude measured some comparisons of C08, C09 and C10 on a different window from the chosen one. I had 12/36 used everywhere.
+7. Claude put the re-tuning step in the write-up and the website. I moved it to notebook 04 (test and select), where it belongs.
+8. Claude computed the H × W grid in two notebooks. I removed the duplicate.
+9. Claude's explanations leaned on jargon ("roll6", "robust", "alert lines") and confusing tables. I had them rewritten in plain language.
 
 ## If there were more time
 
