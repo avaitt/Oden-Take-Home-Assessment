@@ -37,6 +37,11 @@ the write-up, reads those five files and computes nothing.
 To try other settings, change `Config(...)` (H, W, event) at the top of each notebook and re-run them all; the
 write-up warns if the notebooks were run with different settings or if a file is out of date.
 
+**Website:** [avaitt.github.io/Oden-Take-Home-Assessment](https://avaitt.github.io/Oden-Take-Home-Assessment/) has
+three pages: the write-up (notebook 06), a **rule explorer** (C08, C09 and C10 scored on the holdout machines for any H,
+W and event) and a **machine explorer** (any machine's year of any sensor, with its errors, replacements and failures).
+It is built from `docs/` by `python site/build_site.py` (~2 min, after running the notebooks).
+
 **Data:** [Microsoft Azure Predictive Maintenance on Kaggle](https://www.kaggle.com/datasets/arnabbiswas1/microsoft-azure-predictive-maintenance)
 (version 3, five CSVs). It downloads on first use with
 `kagglehub.dataset_download("arnabbiswas1/microsoft-azure-predictive-maintenance")`; no account is needed.
@@ -48,8 +53,8 @@ write-up warns if the notebooks were run with different settings or if a file is
 
 **Goodness = F1** of precision and coverage. The window is **"will it fail within the next 48 hours?"**
 (H = 0, W = 48), chosen by F1 on a grid of 100 windows (notebook 04, section 6). **My recommendation for
-deployment is H = 12, W = 36**, so every alert leaves half a day to act. That costs ~0.01 F1 and changes no
-detector (see "My decisions" below). Every choice was made on 50 dev machines; the numbers
+deployment is H = 12, W = 36**, so every alert leaves half a day to act. With C09's threshold re-tuned for that
+window it scores the same on holdout (F1 0.94); left unchanged it drops to 0.89 (see "My decisions" below). Every choice was made on 50 dev machines; the numbers
 below are from the other **50 holdout machines** ("any failure", 350 events), with 95% intervals.
 
 | # | Precursor | Rule | F1 | Precision | Coverage | Lead |
@@ -82,9 +87,11 @@ I directed the analysis and made its key calls; the AI assistant wrote most of t
   - it guarantees half a day of warning, about one maintenance shift: enough to schedule a crew and a part;
   - W = 36 still reaches back to where the drift starts (48 h before the failure), and still contains the
     part's own error code (logged 24 h before), so the window covers the whole precursor;
-  - the best detector alerts ~23 h ahead and the early-warning one ~43 h ahead, so a 12 h buffer still gives
-    them credit;
-  - it costs only ~0.01 F1 (0.936 vs 0.945), less than the noise (~±0.02), and changes no detector or alert;
+  - the best detector alerts ~23 h ahead (median) and the early-warning one ~43 h ahead, so most of their
+    alerts already come more than 12 h before the failure;
+  - it costs nothing once C09's threshold is re-tuned for the 12 h buffer (on dev machines, as before): holdout F1
+    is 0.94 either way. Left unchanged, C09 drops to 0.89, because 10% of failures are first flagged in the final
+    12 hours, which no longer count;
   - a larger buffer would not work: F1 collapses once the window starts 36 h or more ahead.
 * **The ML benchmark as a guide and a ceiling.** I had the ML models kept and documented as their own notebook
   (03), used to guide which signals to build rules on and to check that the simple rules are not leaving much

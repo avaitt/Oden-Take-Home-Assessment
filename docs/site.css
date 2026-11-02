@@ -1,0 +1,52 @@
+/* Shared styles for the three pages. Light theme only (the write-up is rendered by nbconvert in light). */
+:root {
+  --bg: #fbfbf9; --panel: #ffffff; --ink: #1d2327; --muted: #5d6870; --line: #dfe3e1;
+  --accent: #0e6170; --accent-soft: #e3f0f1; --warn: #b03a3a; --amber: #b76e00;
+  color-scheme: light;
+}
+body { background: var(--bg); color: var(--ink); }
+
+.site-nav { position: sticky; top: 0; z-index: 50; background: var(--panel); border-bottom: 1px solid var(--line); }
+.site-nav__inner { max-width: 1100px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: space-between; gap: 8px 24px;
+  font-family: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif; }
+.site-nav__brand { font-weight: 600; color: var(--ink); text-decoration: none; font-size: 15px; }
+.site-nav__brand span { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.site-nav nav { display: flex; flex-wrap: wrap; gap: 4px; }
+.site-nav nav a { color: var(--muted); text-decoration: none; font-size: 14px; padding: 6px 10px; border-radius: 6px; }
+.site-nav nav a:hover { background: var(--accent-soft); color: var(--accent); }
+.site-nav nav a[aria-current="page"] { background: var(--accent); color: #fff; }
+
+/* the two tool pages */
+.page { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px;
+  font-family: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.55; }
+.page h1 { font-size: 26px; margin: 8px 0 4px; text-wrap: balance; }
+.page h2 { font-size: 18px; margin: 32px 0 8px; }
+.page p, .page li { max-width: 72ch; }
+.lede { color: var(--muted); margin-top: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 18px 0; }
+.controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .04em; }
+.controls select, .controls input { font: inherit; font-size: 15px; padding: 6px 8px; border: 1px solid var(--line);
+  border-radius: 6px; background: #fff; color: var(--ink); min-width: 120px; }
+.controls button { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--accent); background: #fff; color: var(--accent); }
+.controls button:hover { background: var(--accent-soft); }
+.table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+table.metrics { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+table.metrics th, table.metrics td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.metrics th:first-child, table.metrics td:first-child { text-align: left; white-space: normal; }
+table.metrics thead th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+table.metrics tbody tr:last-child td { border-bottom: 0; }
+.rule-id { font-weight: 600; color: var(--accent); }
+.note { font-size: 13px; color: var(--muted); }
+.chart { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-width: 0; }
+.rules-plain { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.rules-plain div { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+.rules-plain b { color: var(--accent); }
+.summary-line { font-size: 14px; color: var(--muted); margin: 4px 0 12px; font-variant-numeric: tabular-nums; }
+
+/* the write-up (nbconvert's "lab" page): centre it and keep lines readable */
+body.jp-Notebook { max-width: 1100px; margin: 0 auto; padding: 0 16px 64px; }
+body.jp-Notebook .site-nav { margin: 0 -16px; }

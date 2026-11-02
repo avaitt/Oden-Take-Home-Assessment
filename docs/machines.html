@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oden take-home · Machine explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="index.html">Precursors to failure <span>Oden take-home</span></a>
+    <nav>
+      <a href="index.html">Write-up</a>
+      <a href="rules.html">Rule explorer</a>
+      <a href="machines.html" aria-current="page">Machine explorer</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <h1>Machine explorer</h1>
+  <p class="lede">One machine's year of 2015: a sensor's daily average, with every error code, part replacement and
+    failure marked above it.</p>
+
+  <div class="controls">
+    <label>Machine (1–100)<input id="machine" type="number" min="1" max="100" step="1" value="99"></label>
+    <label>Sensor
+      <select id="signal">
+        <option value="volt">voltage</option><option value="rotate">rotation</option>
+        <option value="pressure">pressure</option><option value="vibration" selected>vibration</option>
+      </select>
+    </label>
+    <button id="busiest" type="button">Machine with the most failures</button>
+  </div>
+  <p class="summary-line" id="summary"></p>
+  <div class="chart" id="plot"></div>
+
+  <h2>How to read this</h2>
+  <ul>
+    <li>The line is the daily average of the chosen sensor (readings are hourly). Each part has one signature
+      sensor: comp1 → voltage, comp2 → rotation, comp3 → pressure, comp4 → vibration. That sensor shifts in the
+      ~48 hours before the part fails.</li>
+    <li>Hover over a marker for its time and its error code or part. Failures and replacements are logged in a
+      daily 06:00 batch; every failure comes with a replacement of the same part at the same moment.</li>
+    <li>Drag to zoom into a few days; double-click to zoom back out.</li>
+  </ul>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NAMES = { volt: "voltage", rotate: "rotation", pressure: "pressure", vibration: "vibration" };
+let D;
+
+function render() {
+  const m = Math.min(100, Math.max(1, Math.round(+$("machine").value || 1)));
+  $("machine").value = m;
+  const s = $("signal").value, y = D.daily[s][m - 1];
+  const errs = D.errors[m] || [], reps = D.replacements[m] || [], fails = D.failures[m] || [];
+  const info = D.machines[m];
+  $("summary").textContent = `Machine ${m} · ${info.model}, ${info.age} years old · ` +
+    `${errs.length} error codes · ${reps.length} replacements · ${fails.length} failures`;
+
+  const top = Math.max(...y.filter(v => v !== null)), low = Math.min(...y.filter(v => v !== null));
+  const pad = (top - low) * 0.08 || 1;
+  const row = k => top + pad * k;
+  const marks = (list, name, k, symbol, color, size) => ({
+    type: "scatter", mode: "markers", name, x: list.map(e => e[0]), y: list.map(() => row(k)),
+    marker: { symbol, size, color, line: { width: 1.5, color } },
+    hovertemplate: `${name}: %{customdata}<br>%{x}<extra></extra>`, customdata: list.map(e => e[1])
+  });
+  Plotly.react("plot", [
+    { type: "scatter", mode: "lines", name: `${NAMES[s]} (daily mean)`, x: D.days, y,
+      line: { color: "#6b7378", width: 1.5 }, hovertemplate: "%{x}<br>%{y:.1f}<extra></extra>" },
+    marks(errs, "error", 1, "line-ns", "#b76e00", 10),
+    marks(reps, "replacement", 2, "triangle-up", "#0e6170", 9),
+    marks(fails, "failure", 3, "x", "#b03a3a", 11),
+  ], {
+    title: { text: `Machine ${m}: one year of ${NAMES[s]} with its errors, replacements and failures`, font: { size: 15 } },
+    height: 480, margin: { l: 60, r: 20, t: 50, b: 50 }, hovermode: "closest",
+    yaxis: { title: NAMES[s], range: [low - pad, row(3.8)] }, xaxis: { title: "2015" },
+    legend: { orientation: "h", y: -0.18 },
+    font: { family: "IBM Plex Sans, sans-serif" }, paper_bgcolor: "#fff", plot_bgcolor: "#fff"
+  }, { responsive: true, displayModeBar: false });
+}
+
+fetch("data/machines.json").then(r => r.json()).then(d => {
+  D = d;
+  const busiest = Object.entries(D.failures).sort((a, b) => b[1].length - a[1].length)[0][0];
+  $("machine").value = busiest;
+  $("busiest").onclick = () => { $("machine").value = busiest; render(); };
+  $("busiest").textContent = `Machine with the most failures (${busiest})`;
+  ["machine", "signal"].forEach(id => $(id).addEventListener("change", render));
+  render();
+});
+</script>
+</body>
+</html>

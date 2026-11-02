@@ -51,7 +51,8 @@ class Config:
     #  * No leakage concern: an hour-by-hour audit (notebook 01, section 3) shows each part's signal
     #    stays shifted up to its 06:00 failure stamp and is back to normal one hour after it.
     #  * In practice we would deploy with H=12, W=36, so every alert that counts leaves half a day
-    #    to act. It costs ~0.01 F1 (0.936) and changes no detector or alert (notebook 06).
+    #    to act. With C09's threshold re-tuned for that window it scores the same on holdout (F1 0.94);
+    #    left unchanged it drops to 0.89 (notebook 06, section 11).
     H: int = 0
     W: int = 48
 

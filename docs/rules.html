@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oden take-home · Rule explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<header class="site-nav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="index.html">Precursors to failure <span>Oden take-home</span></a>
+    <nav>
+      <a href="index.html">Write-up</a>
+      <a href="rules.html" aria-current="page">Rule explorer</a>
+      <a href="machines.html">Machine explorer</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <h1>Rule explorer</h1>
+  <p class="lede">Apply the three kept rules to any window (H, W) and event, and see how they score on the
+    50 holdout machines.</p>
+
+  <div class="rules-plain">
+    <div><b>C09 · Matched signature.</b> Alert when, for the same part, its own sensor (6 h average) is beyond
+      the level the machine reaches only 1% of the time in normal running, <i>and</i> that part's own error code
+      was logged in the last 24 h.</div>
+    <div><b>C08 · Drift + any error.</b> Alert when any sensor (6 h average) is far from the machine's normal
+      level (median ± 3.72 robust standard deviations) <i>and</i> any error code was logged in the last 48 h.</div>
+    <div><b>C10 · Drift on an aging part.</b> Alert when, for the same part, its sensor (6 h average) is far from
+      normal <i>and</i> the part is older than its typical age since replacement (~31–34 days).</div>
+  </div>
+
+  <div class="controls">
+    <label>Event
+      <select id="event">
+        <option value="any">any failure</option>
+        <option value="comp1">comp1 only</option><option value="comp2">comp2 only</option>
+        <option value="comp3">comp3 only</option><option value="comp4">comp4 only</option>
+      </select>
+    </label>
+    <label>H, lead time (h)<select id="H"></select></label>
+    <label>W, window length (h)<select id="W"></select></label>
+    <button id="best" type="button">Best by F1: H 0, W 48</button>
+    <button id="rec" type="button">Recommended: H 12, W 36</button>
+  </div>
+
+  <p class="summary-line" id="window-text"></p>
+  <div class="table-wrap">
+    <table class="metrics">
+      <thead><tr><th>Rule</th><th>F1 [95% interval]</th><th>Precision</th><th>Coverage</th><th>Lift</th>
+        <th>Alerts / machine-month</th><th>Median lead</th></tr></thead>
+      <tbody id="results"></tbody>
+    </table>
+  </div>
+  <p class="note" id="base-text"></p>
+
+  <h2>F1 over every window</h2>
+  <div class="controls">
+    <label>Rule shown in the grid
+      <select id="grid-rule"><option value="C09">C09 matched signature</option>
+        <option value="C08">C08 drift + any error</option><option value="C10">C10 drift on an aging part</option></select>
+    </label>
+    <span class="note">Click a cell to select that window. Black box: best by F1 (H 0, W 48). Red box: recommended
+      (H 12, W 36). Thick yellow box: your selection.</span>
+  </div>
+  <div class="chart" id="grid"></div>
+
+  <h2>How to read this</h2>
+  <ul>
+    <li><b>H</b> (lead time) and <b>W</b> (window): an alert counts if it comes between H + W and H hours before a
+      failure. H = 0, W = 48 means "within the 48 hours before the failure"; the failure hour itself is never scored.</li>
+    <li><b>The rules are fixed</b>: the same smoothing, threshold scope and level that notebook 04 kept. Changing H, W or
+      the event changes which hours count as normal operation, so each threshold is re-fitted from those hours, and
+      it changes which alerts count. For a single part, C09 and C10 watch only that part's own sensor, error codes and age.</li>
+    <li><b>Precision</b>: share of alerts followed by a failure within H + W. <b>Coverage</b>: share of failures with at
+      least one alert in their window. <b>F1</b> balances the two. <b>Lift</b>: how much more often the rule fires
+      before failures than in normal running.</li>
+    <li><b>At the recommended window (H 12, W 36)</b> the kept C09 scores F1 0.89: 10% of failures get their first
+      alert only in the final 12 hours, which no longer counts. Re-tuned for that window (a slightly more sensitive
+      line, chosen on dev machines), C09 scores 0.94, the same as the F1-best window. This page shows the rules as
+      kept; the write-up, section 11, has both.</li>
+    <li>All numbers are on the 50 holdout machines, which never influenced any choice. Intervals resample whole
+      machines (200 resamples). The data is synthetic and very clean, so treat absolute numbers as optimistic.</li>
+  </ul>
+</main>
+
+<script>
+const fmt = (v, d = 2) => (v === null || v === undefined) ? "–" : v.toFixed(d);
+const pct = v => (v === null || v === undefined) ? "–" : (100 * v).toFixed(0) + "%";
+const $ = id => document.getElementById(id);
+let D;
+
+function cell() { return D.data[$("event").value][`${$("H").value},${$("W").value}`]; }
+
+function renderTable() {
+  const c = cell(), H = +$("H").value, W = +$("W").value;
+  $("window-text").textContent =
+    `Window: alerts count from ${H + W} h to ${Math.max(H, 1)} h before each failure` +
+    ` · ${c.C09.events} holdout events`;
+  $("results").innerHTML = D.rules.map(r => {
+    const m = c[r];
+    return `<tr><td><span class="rule-id">${r}</span> ${D.titles[r]}</td>
+      <td><b>${fmt(m.f1)}</b> [${fmt(m.f1_lo)}, ${fmt(m.f1_hi)}]</td>
+      <td>${pct(m.precision)}</td><td>${pct(m.coverage)}</td><td>${fmt(m.lift, 1)}</td>
+      <td>${fmt(m.alerts_pm, 2)}</td><td>${m.lead === null ? "–" : m.lead.toFixed(0) + " h"}</td></tr>`;
+  }).join("");
+  $("base-text").textContent = `A rule that fires at random would be right ${pct(c.C09.base)} of the time in this window.`;
+}
+
+function box(H, W, color, width) {
+  return { type: "rect", x0: D.W.indexOf(W) - 0.5, x1: D.W.indexOf(W) + 0.5,
+           y0: D.H.indexOf(H) - 0.5, y1: D.H.indexOf(H) + 0.5, line: { color, width } };
+}
+
+function renderGrid() {
+  const rule = $("grid-rule").value, ev = D.data[$("event").value];
+  const z = D.H.map(h => D.W.map(w => ev[`${h},${w}`][rule].f1));
+  const shapes = [box(+$("H").value, +$("W").value, "#f5b700", 5), box(0, 48, "black", 2), box(12, 36, "#d62728", 2)];
+  Plotly.react("grid", [{
+    type: "heatmap", z, x: D.W.map((w, i) => i), y: D.H.map((h, i) => i), colorscale: "Blues", reversescale: true, zmin: 0, zmax: 1,
+    hovertemplate: "H %{customdata[0]} h, W %{customdata[1]} h<br>F1 %{z:.3f}<extra></extra>",
+    customdata: D.H.map(h => D.W.map(w => [h, w])), colorbar: { title: "F1" }
+  }], {
+    margin: { l: 70, r: 20, t: 30, b: 60 }, height: 560, shapes,
+    title: { text: `${rule}: F1 on holdout machines, ${$("event").selectedOptions[0].text}`, font: { size: 14 } },
+    xaxis: { title: "W, window length (h)", tickvals: D.W.map((w, i) => i), ticktext: D.W.map(String) },
+    yaxis: { title: "H, lead time (h)", tickvals: D.H.map((h, i) => i), ticktext: D.H.map(String) },
+    font: { family: "IBM Plex Sans, sans-serif" }, paper_bgcolor: "#fff", plot_bgcolor: "#fff"
+  }, { responsive: true, displayModeBar: false });
+}
+
+function render() { renderTable(); renderGrid(); }
+function setWindow(H, W) { $("H").value = H; $("W").value = W; render(); }
+
+fetch("data/rules.json").then(r => r.json()).then(d => {
+  D = d;
+  $("H").innerHTML = D.H.map(h => `<option>${h}</option>`).join("");
+  $("W").innerHTML = D.W.map(w => `<option>${w}</option>`).join("");
+  setWindow(D.default.H, D.default.W);
+  ["event", "H", "W", "grid-rule"].forEach(id => $(id).addEventListener("change", render));
+  $("best").onclick = () => setWindow(0, 48);
+  $("rec").onclick = () => setWindow(12, 36);
+  $("grid").on("plotly_click", e => setWindow(e.points[0].customdata[0], e.points[0].customdata[1]));
+});
+</script>
+</body>
+</html>
