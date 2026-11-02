@@ -8152,7 +8152,7 @@ it ran. It says "re-run" if the code in <code>src/</code> changed afterwards, or
 </tr>
 <tr>
 <td>Counters vs. live readings</td>
-<td>the four sensors (volt, rotate, pressure, vibration) are live readings; the only counter is "hours since maintenance", which we build from the maintenance log</td>
+<td>the four sensors (volt, rotate, pressure, vibration) are live readings; the only counter is "hours since maintenance", which I build from the maintenance log</td>
 </tr>
 <tr>
 <td>Timestamps</td>
@@ -9217,7 +9217,7 @@ part-specific pairing from the data, and the linear model can't express it at al
 <li><strong>Look-alikes fool anything that scores signal levels.</strong> Each part's signal drifts ~470 times a year without
 a failure (notebook 01, section 7). Only the matching error code separates real drifts from look-alikes, and
 the rule demands it explicitly.</li>
-<li><strong>The rules are tuned on the score we report</strong> (alert-level F1). The models are trained to rank individual
+<li><strong>The rules are tuned on the score I report</strong> (alert-level F1). The models are trained to rank individual
 hours, then thresholded once, which is a weaker fit to the goal.</li>
 <li><strong>The models catch every failure but raise far more false alarms</strong>, and gradient boosting with counters leans
 on "hours since maintenance", the same leaky signal the causal gate rejects (notebook 05, section 3).</li>
@@ -9268,7 +9268,7 @@ only 1 of 719 failures came within 24 h of the previous one, and muting 0 to 72 
 (notebook 05, section 4).</li>
 <li><strong>The first 24 h of 2015 are not scored:</strong> the 6 h and 24 h averages and error counts need a day of history.
 The 13 holdout failures left out are all on 2 January 2015, whose window would start in 2014.</li>
-<li><strong>Alerts in the last 48 h of the year are not judged:</strong> the data ends before we would know whether a failure
+<li><strong>Alerts in the last 48 h of the year are not judged:</strong> the data ends before I would know whether a failure
 followed. No failures are dropped; it only affects which alerts count toward precision.</li>
 </ul>
 </div>
@@ -9356,7 +9356,7 @@ repair, or hand a planned job to the next shift, before the failure.</li>
 </ul>
 <p>The right number for a real line should come from its own repair times and part lead times; 12 hours is a
 sensible default.</p>
-<h2 id="12-%C2%B7-What-we-would-do-next">12 · What we would do next<a class="anchor-link" href="#12-%C2%B7-What-we-would-do-next">¶</a></h2><ul>
+<h2 id="12-%C2%B7-What-I-would-do-next">12 · What I would do next<a class="anchor-link" href="#12-%C2%B7-What-I-would-do-next">¶</a></h2><ul>
 <li>Ask whether the look-alike excursions precede maintenance that averted a failure. If so, some "false
 alarms" are really saves.</li>
 <li>Replace F1 with an expected-cost score once the cost of a false alarm and of a missed failure are known.</li>
