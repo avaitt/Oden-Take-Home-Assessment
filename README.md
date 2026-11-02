@@ -54,14 +54,15 @@ It is built from `docs/` by `python site/build_site.py` (~2 min, after running t
 **Goodness = F1** of precision and coverage. The window is **"will it fail within the next 48 hours?"**
 (H = 0, W = 48), chosen by F1 on a grid of 100 windows (notebook 04, section 6). **My recommendation for
 deployment is H = 12, W = 36**, so every alert leaves half a day to act. With C09's threshold re-tuned for that
-window it scores the same on holdout (F1 0.94); left unchanged it drops to 0.89 (see "My decisions" below). Every choice was made on 50 dev machines; the numbers
-below are from the other **50 holdout machines** ("any failure", 350 events), with 95% intervals.
+window it scores F1 0.94 on holdout (0.92 at H = 0, W = 48); left unchanged it drops to 0.81 (see "My decisions" below). Every choice was made on 50 dev machines; the numbers
+below are from the other **50 holdout machines** ("any failure", 350 events), with 95% intervals. A holdout
+machine's per-machine thresholds come from all of its own hours, never from its failure dates (label-free).
 
 | # | Precursor | Rule | F1 | Precision | Coverage | Lead |
 |---|---|---|---|---|---|---|
-| 1 | **C09 Matched signature** | a part's **own** signal (6 h mean) beyond its machine's P99 (P1 for rotation) **and** that part's **own** error code logged in the last 24 h | **0.94** | 92% [89, 94] | 96% [94, 98] | ~23 h |
-| 2 | C08 Drift + any error | any signal's 6 h mean beyond its machine's median ± 3.72 MAD-σ **and** any error code in the last 48 h | 0.76 | 62% [58, 67] | 98% [97, 99] | ~24 h |
-| 3 | C10 Drift on an aging part | a part's own signal drifting **and** the part older than its median time since replacement | 0.56 | 41% [37, 45] | 91% [87, 94] | **~43 h** |
+| 1 | **C09 Matched signature** | a part's **own** signal (6 h mean) beyond its machine's P99 (P1 for rotation) **and** that part's **own** error code logged in the last 24 h | **0.92** | 93% [90, 95] | 91% [88, 94] | ~20 h |
+| 2 | C08 Drift + any error | any signal's 6 h mean beyond its machine's median ± 3.72 MAD-σ **and** any error code in the last 48 h | 0.76 | 63% [58, 67] | 98% [96, 99] | ~24 h |
+| 3 | C10 Drift on an aging part | a part's own signal drifting **and** the part older than its median time since replacement | 0.57 | 41% [37, 45] | 90% [87, 94] | **~43 h** |
 
 A random alarm would be right 4% of the time. Each part's signal drifts ~48 h before it fails, but ~470
 look-alike drifts per part never end in a failure. **The part's own error code tells them apart.** That is
@@ -87,11 +88,11 @@ I directed the analysis and made its key calls; the AI assistant wrote most of t
   - it guarantees half a day of warning, about one maintenance shift: enough to schedule a crew and a part;
   - W = 36 still reaches back to where the drift starts (48 h before the failure), and still contains the
     part's own error code (logged 24 h before), so the window covers the whole precursor;
-  - the best detector alerts ~23 h ahead (median) and the early-warning one ~43 h ahead, so most of their
+  - the best detector alerts ~20 h ahead (median) and the early-warning one ~43 h ahead, so most of their
     alerts already come more than 12 h before the failure;
   - it costs nothing once C09's threshold is re-tuned for the 12 h buffer (on dev machines, as before): holdout F1
-    is 0.94 either way. Left unchanged, C09 drops to 0.89, because 10% of failures are first flagged in the final
-    12 hours, which no longer count;
+    is 0.94 (vs 0.92 at H = 0, W = 48). Left unchanged, C09 drops to 0.81, because 20% of failures are first
+    flagged in the final 12 hours, which no longer count;
   - a larger buffer would not work: F1 collapses once the window starts 36 h or more ahead.
 * **The ML benchmark as a guide and a ceiling.** I had the ML models kept and documented as their own notebook
   (03), used to guide which signals to build rules on and to check that the simple rules are not leaving much

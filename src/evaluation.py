@@ -349,6 +349,33 @@ def run_event_kind(panel: Panel, cfg: Config, bank: FeatureBank, dev, hold, n_nu
     return out
 
 
+def retune_for_window(panel: Panel, cfg: Config, bank: FeatureBank, dev, hold, kept: list, H: int, W: int) -> dict:
+    """Re-tune the kept rules for a different window (e.g. the deployment window H=12, W=36).
+
+    For each kept rule: the variant with the best F1 on DEV machines at (H, W), chosen exactly as in the
+    selection protocol. Then, on HOLDOUT machines at (H, W): the rule as kept (tuned for cfg's window) next to
+    the re-tuned rule, with 95% cluster-bootstrap intervals. `kept` is the "concepts" rows of run_event_kind.
+    """
+    rng = np.random.default_rng(cfg.seed)
+    mk = build_masks(panel, cfg.with_(H=H, W=W))
+    concepts = {c.cid: c for c in build_concepts(cfg.percentiles, cfg.event, MAPPING)}
+    out = {}
+    for r in kept:
+        variants = concepts[r["cid"]].variants
+        as_kept = next(v for v in variants if v.variant == r["variant"])
+        retuned = max(variants, key=lambda v: summarize(machine_stats(fire(v, bank, mk.normal, dev), mk)[dev])["f1"])
+        row = dict(cid=r["cid"], kept_variant=as_kept.variant, retuned_variant=retuned.variant,
+                   retuned_rule_short=short_rule(retuned))
+        for name, v in (("as_kept", as_kept), ("retuned", retuned)):
+            f = fire(v, bank, mk.normal, dev)
+            st = machine_stats(f, mk)
+            lt = lead_times(f, mk, hold)
+            row[name] = dict(_clean(summarize(st[hold])), f1_ci=bootstrap(st, hold, cfg.n_bootstrap, rng)["f1"],
+                             lead_median=float(np.median(lt)) if lt else None)
+        out[r["cid"]] = row
+    return dict(H=H, W=W, rules=out)
+
+
 def lookalike_excursions(panel: Panel, cfg: Config, min_len: int = 24) -> dict:
     """How many sustained excursions look exactly like a pre-failure shift but
     are NOT followed by a failure? This bounds the precision ANY signal-based

@@ -23,19 +23,26 @@
 <main class="page">
   <h1>Rule explorer</h1>
   <p class="lede">Apply the three kept rules to any window (H, W) and event, and see how they score on the
-    50 holdout machines.</p>
+    50 holdout machines. By default the page shows the rules <b>re-tuned for H = 12, W = 36</b>, the recommended
+    deployment window (half a day of warning); switch to the rules as first tuned for H = 0, W = 48 to compare.</p>
 
   <div class="rules-plain">
     <div><b>C09 · Matched signature.</b> Alert when, for the same part, its own sensor (6 h average) is beyond
-      the level the machine reaches only 1% of the time in normal running, <i>and</i> that part's own error code
-      was logged in the last 24 h.</div>
-    <div><b>C08 · Drift + any error.</b> Alert when any sensor (6 h average) is far from the machine's normal
-      level (median ± 3.72 robust standard deviations) <i>and</i> any error code was logged in the last 48 h.</div>
-    <div><b>C10 · Drift on an aging part.</b> Alert when, for the same part, its sensor (6 h average) is far from
-      normal <i>and</i> the part is older than its typical age since replacement (~31–34 days).</div>
+      the machine's alert line, <i>and</i> that part's own error code was logged recently.</div>
+    <div><b>C08 · Drift + any error.</b> Alert when any sensor (6 h average) is beyond the machine's alert line
+      <i>and</i> any error code was logged recently.</div>
+    <div><b>C10 · Drift on an aging part.</b> Alert when, for the same part, its sensor (6 h average) is beyond
+      the machine's alert line <i>and</i> the part is older than a typical age since replacement.</div>
   </div>
+  <p class="note" id="settings"></p>
 
   <div class="controls">
+    <label>Rules tuned for
+      <select id="tuning">
+        <option value="12,36">H 12, W 36 (recommended)</option>
+        <option value="0,48">H 0, W 48 (as first kept)</option>
+      </select>
+    </label>
     <label>Event
       <select id="event">
         <option value="any">any failure</option>
@@ -74,16 +81,20 @@
   <ul>
     <li><b>H</b> (lead time) and <b>W</b> (window): an alert counts if it comes between H + W and H hours before a
       failure. H = 0, W = 48 means "within the 48 hours before the failure"; the failure hour itself is never scored.</li>
-    <li><b>The rules are fixed</b>: the same smoothing, threshold scope and level that notebook 04 kept. Changing H, W or
-      the event changes which hours count as normal operation, so each threshold is re-fitted from those hours, and
-      it changes which alerts count. For a single part, C09 and C10 watch only that part's own sensor, error codes and age.</li>
+    <li><b>Two rule sets.</b> "H 0, W 48" is each rule exactly as notebook 04 kept it. "H 12, W 36" is the same
+      three rules re-tuned for the recommended window: for each rule, the setting with the best F1 on the dev
+      machines at H = 12, W = 36 (the settings are listed under the rule descriptions). Within a rule set the
+      settings stay fixed as you change H, W or the event; each line is re-fitted from the hours that count as normal
+      operation for that window. For a single part, C09 and C10 watch only that part's own sensor, error codes and age.</li>
     <li><b>Precision</b>: share of alerts followed by a failure within H + W. <b>Coverage</b>: share of failures with at
       least one alert in their window. <b>F1</b> balances the two. <b>Lift</b>: how much more often the rule fires
       before failures than in normal running.</li>
-    <li><b>At the recommended window (H 12, W 36)</b> the kept C09 scores F1 0.89: 10% of failures get their first
-      alert only in the final 12 hours, which no longer counts. Re-tuned for that window (a slightly more sensitive
-      line, chosen on dev machines), C09 scores 0.94, the same as the F1-best window. This page shows the rules as
-      kept; the write-up, section 11, has both.</li>
+    <li><b>Why re-tune for H 12, W 36?</b> With the rules as first kept, C09 scores F1 0.81 there: 20% of failures get
+      their first alert only in the final 12 hours, which no longer counts. Re-tuned, C09 uses its machine's
+      outlier-proof line (P99.9), which crosses earlier, and scores 0.94, a little higher than at H 0, W 48 (0.92).
+      The write-up, section 11, has the details.</li>
+    <li><b>Alert lines on holdout machines are label-free</b>: they come from all of that machine's own hours, never
+      from its failure dates.</li>
     <li>All numbers are on the 50 holdout machines, which never influenced any choice. Intervals resample whole
       machines (200 resamples). The data is synthetic and very clean, so treat absolute numbers as optimistic.</li>
   </ul>
@@ -95,9 +106,24 @@ const pct = v => (v === null || v === undefined) ? "–" : (100 * v).toFixed(0) 
 const $ = id => document.getElementById(id);
 let D;
 
-function cell() { return D.data[$("event").value][`${$("H").value},${$("W").value}`]; }
+function cell() { return D.data[$("tuning").value][$("event").value][`${$("H").value},${$("W").value}`]; }
+
+// "roll6·robust·p99.9·k1" -> "6 h average, per-machine outlier-proof line at P99.9"
+function plain(variant) {
+  const [tr, norm, p] = variant.split("·");
+  const T = { raw: "hourly reading", roll6: "6 h average", roll24: "24 h average", cusum: "CUSUM", std24: "24 h spread" };
+  const N = { global: "fleet-wide line", model: "per-model line", machine: "per-machine line", robust: "per-machine outlier-proof line" };
+  return `${T[tr] || tr}, ${N[norm] || norm} at ${p.toUpperCase()}`;
+}
+function renderSettings() {
+  const v = D.variants[$("tuning").value];
+  $("settings").textContent = `Settings in this rule set (sensor part): ` +
+    D.rules.map(r => `${r}: ${plain(v[r])}`).join(" · ") +
+    `. C09's error-code part counts the part's own codes; C10's age part uses the part's time since replacement.`;
+}
 
 function renderTable() {
+  renderSettings();
   const c = cell(), H = +$("H").value, W = +$("W").value;
   $("window-text").textContent =
     `Window: alerts count from ${H + W} h to ${Math.max(H, 1)} h before each failure` +
@@ -118,7 +144,7 @@ function box(H, W, color, width) {
 }
 
 function renderGrid() {
-  const rule = $("grid-rule").value, ev = D.data[$("event").value];
+  const rule = $("grid-rule").value, ev = D.data[$("tuning").value][$("event").value];
   const z = D.H.map(h => D.W.map(w => ev[`${h},${w}`][rule].f1));
   const shapes = [box(+$("H").value, +$("W").value, "#f5b700", 5), box(0, 48, "black", 2), box(12, 36, "#d62728", 2)];
   Plotly.react("grid", [{
@@ -127,7 +153,7 @@ function renderGrid() {
     customdata: D.H.map(h => D.W.map(w => [h, w])), colorbar: { title: "F1" }
   }], {
     margin: { l: 70, r: 20, t: 30, b: 60 }, height: 560, shapes,
-    title: { text: `${rule}: F1 on holdout machines, ${$("event").selectedOptions[0].text}`, font: { size: 14 } },
+    title: { text: `${rule} (tuned for ${$("tuning").selectedOptions[0].text}): F1 on holdout machines, ${$("event").selectedOptions[0].text}`, font: { size: 14 } },
     xaxis: { title: "W, window length (h)", tickvals: D.W.map((w, i) => i), ticktext: D.W.map(String) },
     yaxis: { title: "H, lead time (h)", tickvals: D.H.map((h, i) => i), ticktext: D.H.map(String) },
     font: { family: "IBM Plex Sans, sans-serif" }, paper_bgcolor: "#fff", plot_bgcolor: "#fff"
@@ -141,8 +167,8 @@ fetch("data/rules.json").then(r => r.json()).then(d => {
   D = d;
   $("H").innerHTML = D.H.map(h => `<option>${h}</option>`).join("");
   $("W").innerHTML = D.W.map(w => `<option>${w}</option>`).join("");
-  setWindow(D.default.H, D.default.W);
-  ["event", "H", "W", "grid-rule"].forEach(id => $(id).addEventListener("change", render));
+  setWindow(D.recommended.H, D.recommended.W);
+  ["tuning", "event", "H", "W", "grid-rule"].forEach(id => $(id).addEventListener("change", render));
   $("best").onclick = () => setWindow(0, 48);
   $("rec").onclick = () => setWindow(12, 36);
   $("grid").on("plotly_click", e => setWindow(e.points[0].customdata[0], e.points[0].customdata[1]));

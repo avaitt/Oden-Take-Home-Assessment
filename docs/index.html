@@ -7921,35 +7921,35 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 <tbody>
 <tr>
 <th>01_dataset_and_parameters</th>
-<td>2026-11-02 01:58:52</td>
+<td>2026-11-02 02:46:24</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>02_candidates</th>
-<td>2026-11-02 01:58:56</td>
+<td>2026-11-02 02:46:28</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>03_ml_benchmark</th>
-<td>2026-11-02 02:00:30</td>
+<td>2026-11-02 02:48:04</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>04_test_and_select</th>
-<td>2026-11-02 02:09:15</td>
+<td>2026-11-02 02:57:24</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
 </tr>
 <tr>
 <th>05_audit</th>
-<td>2026-11-02 02:09:28</td>
+<td>2026-11-02 02:57:38</td>
 <td>0</td>
 <td>48</td>
 <td>up to date</td>
@@ -7972,8 +7972,8 @@ each part's own sensor signal shifts about <strong>48 hours</strong> before it f
 ~470 times a year <em>without</em> a failure, so a sensor alone can't be trusted (at most ~38% of its alarms are real).
 What separates real from false shifts is <strong>the part's own error code</strong>, logged 24 hours before the failure.
 The strongest precursor, <strong>C09 "matched signature"</strong> (a part's own signal drifting <em>and</em> its own error code
-logged), scores <strong>F1 0.94 on machines it never saw</strong>: it catches <strong>96%</strong> of failures, <strong>92%</strong> of its alarms are
-real, and it warns about <strong>23 hours</strong> ahead. Two more survive: <strong>C10</strong> (drift on a worn part) warns earlier
+logged), scores <strong>F1 0.92 on machines it never saw</strong>: it catches <strong>91%</strong> of failures, <strong>93%</strong> of its alarms are
+real, and it warns about <strong>20 hours</strong> ahead. Two more survive: <strong>C10</strong> (drift on a worn part) warns earlier
 (~43 h) but is right only 41% of the time, and <strong>C08</strong> (any drift + any error) is a simpler fallback. By F1 the
 best window is "will it fail within the next 48 hours?" (H = 0, W = 48); for deployment we recommend requiring
 half a day of warning (H = 12, W = 36), which costs nothing once C09's threshold is re-tuned for it (section 11). The data is synthetic and unusually clean, so
@@ -8436,7 +8436,7 @@ so ideas are compared fairly rather than on a lucky first draft.</p>
 <h3 id="4.3-%C2%B7-Notebook-03:-ML-benchmark">4.3 · Notebook 03: ML benchmark<a class="anchor-link" href="#4.3-%C2%B7-Notebook-03:-ML-benchmark">¶</a></h3><ul>
 <li>Three models (gradient boosting with and without the maintenance counters, and logistic regression), trained
 on dev machines from 32 features and scored exactly like the rules. The best, logistic regression, reaches
-F1 ~0.63, well below C09 (0.94); section 8 compares them and explains why the rules win.</li>
+F1 ~0.63, well below C09 (0.92); section 8 compares them and explains why the rules win.</li>
 <li><strong>What the models lean on:</strong> smoothed signals (6 h and 24 h averages) and each part's own error counts, which
 pointed the candidates toward "smoothed drift + error code".</li>
 </ul>
@@ -8516,12 +8516,12 @@ pointed the candidates toward "smoothed drift + error code".</li>
 <h3 id="4.4-%C2%B7-Notebook-04:-test-and-select">4.4 · Notebook 04: test and select<a class="anchor-link" href="#4.4-%C2%B7-Notebook-04:-test-and-select">¶</a></h3><ul>
 <li><strong>All ten ideas</strong> were scored with lift, precision and coverage, with thresholds from normal operation only.
 Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the others lose: section 7.</li>
-<li><strong>Kept</strong> (holdout machines, any failure): <strong>C09</strong> F1 0.94 (92% precision, 96% coverage, ~23 h ahead);
-<strong>C08</strong> F1 0.76 (62%, 98%); <strong>C10</strong> F1 0.56 (41%, 91%, ~43 h ahead).</li>
+<li><strong>Kept</strong> (holdout machines, any failure): <strong>C09</strong> F1 0.92 (93% precision, 91% coverage, ~20 h ahead);
+<strong>C08</strong> F1 0.76 (63%, 98%); <strong>C10</strong> F1 0.57 (41%, 90%, ~43 h ahead).</li>
 <li><strong>Smoothing:</strong> a 6 h average works best; CUSUM is worst.</li>
 <li><strong>Choosing H and W:</strong> one F1 grid of 100 windows. By F1: <strong>H = 0, W = 48</strong>; recommended for deployment:
-<strong>H = 12, W = 36</strong> (section 11).</li>
-<li><strong>Every event type:</strong> C09 ranks first for any failure and for each part separately (F1 0.94–0.99).</li>
+<strong>H = 12, W = 36</strong>, with C09 re-tuned for it (04 section 7; here section 11).</li>
+<li><strong>Every event type:</strong> C09 ranks first for any failure and for each part separately (F1 0.91–0.99).</li>
 </ul>
 </div>
 </div>
@@ -8567,9 +8567,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.942</td>
-<td>0.922</td>
-<td>0.963</td>
+<td>0.918</td>
+<td>0.927</td>
+<td>0.909</td>
 </tr>
 <tr>
 <th>0</th>
@@ -8577,9 +8577,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>2</td>
 <td>C08</td>
 <td>Drift confirmed by an error</td>
-<td>0.761</td>
-<td>0.621</td>
-<td>0.983</td>
+<td>0.764</td>
+<td>0.628</td>
+<td>0.977</td>
 </tr>
 <tr>
 <th>2</th>
@@ -8587,9 +8587,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>3</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.561</td>
-<td>0.406</td>
-<td>0.906</td>
+<td>0.566</td>
+<td>0.413</td>
+<td>0.903</td>
 </tr>
 <tr>
 <th>4</th>
@@ -8597,8 +8597,8 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.943</td>
-<td>0.893</td>
+<td>0.942</td>
+<td>0.891</td>
 <td>1.000</td>
 </tr>
 <tr>
@@ -8607,9 +8607,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>2</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.579</td>
-<td>0.410</td>
-<td>0.988</td>
+<td>0.574</td>
+<td>0.406</td>
+<td>0.977</td>
 </tr>
 <tr>
 <th>3</th>
@@ -8627,9 +8627,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.944</td>
-<td>0.901</td>
-<td>0.992</td>
+<td>0.945</td>
+<td>0.909</td>
+<td>0.985</td>
 </tr>
 <tr>
 <th>7</th>
@@ -8637,9 +8637,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>2</td>
 <td>C08</td>
 <td>Drift confirmed by an error</td>
-<td>0.819</td>
-<td>0.697</td>
-<td>0.992</td>
+<td>0.814</td>
+<td>0.694</td>
+<td>0.985</td>
 </tr>
 <tr>
 <th>6</th>
@@ -8647,9 +8647,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>3</td>
 <td>C06</td>
 <td>Any error code</td>
-<td>0.650</td>
-<td>0.518</td>
-<td>0.871</td>
+<td>0.263</td>
+<td>0.622</td>
+<td>0.167</td>
 </tr>
 <tr>
 <th>10</th>
@@ -8657,9 +8657,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.952</td>
-<td>0.922</td>
-<td>0.984</td>
+<td>0.909</td>
+<td>0.933</td>
+<td>0.887</td>
 </tr>
 <tr>
 <th>11</th>
@@ -8667,9 +8667,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>2</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.493</td>
-<td>0.406</td>
-<td>0.629</td>
+<td>0.365</td>
+<td>0.323</td>
+<td>0.419</td>
 </tr>
 <tr>
 <th>9</th>
@@ -8677,9 +8677,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>3</td>
 <td>C03</td>
 <td>Pressure builds</td>
-<td>0.374</td>
-<td>0.376</td>
-<td>0.371</td>
+<td>0.110</td>
+<td>0.128</td>
+<td>0.097</td>
 </tr>
 <tr>
 <th>13</th>
@@ -8687,8 +8687,8 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>1</td>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
-<td>0.989</td>
-<td>0.978</td>
+<td>0.995</td>
+<td>0.990</td>
 <td>1.000</td>
 </tr>
 <tr>
@@ -8697,8 +8697,8 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>2</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>0.593</td>
-<td>0.422</td>
+<td>0.609</td>
+<td>0.438</td>
 <td>1.000</td>
 </tr>
 <tr>
@@ -8707,8 +8707,8 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <td>3</td>
 <td>C04</td>
 <td>Vibration rises</td>
-<td>0.407</td>
-<td>0.256</td>
+<td>0.428</td>
+<td>0.273</td>
 <td>1.000</td>
 </tr>
 </tbody>
@@ -8752,11 +8752,11 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 </tr>
 <tr>
 <td>Time drift</td>
-<td>thresholds from January–June work as well on July–December (C09 F1 0.91 vs 0.93)</td>
+<td>thresholds from January–June work almost as well on July–December (C09 F1 0.87 vs 0.92; C08 and C10 unchanged)</td>
 </tr>
 <tr>
 <td>Machine mode changes</td>
-<td>C09 holds across every machine model and age band (precision 0.89–0.94, coverage 0.96–0.99)</td>
+<td>C09 holds across every machine model and age band (precision 0.88–0.94, coverage 0.92–0.97)</td>
 </tr>
 <tr>
 <td>Clustered events</td>
@@ -8774,7 +8774,7 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>best of 300 pure-noise detectors: dev F1 0.0861, holdout F1 0.0671
+<pre>best of 300 pure-noise detectors: dev F1 0.0861, holdout F1 0.071
 </pre>
 </div>
 </div>
@@ -8807,20 +8807,20 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <tr>
 <th>0</th>
 <td>C08</td>
-<td>0.745</td>
-<td>0.751</td>
+<td>0.749</td>
+<td>0.754</td>
 </tr>
 <tr>
 <th>1</th>
 <td>C09</td>
-<td>0.930</td>
-<td>0.905</td>
+<td>0.920</td>
+<td>0.873</td>
 </tr>
 <tr>
 <th>2</th>
 <td>C10</td>
-<td>0.544</td>
-<td>0.566</td>
+<td>0.550</td>
+<td>0.571</td>
 </tr>
 </tbody>
 </table>
@@ -8933,11 +8933,11 @@ use one signal or combine several".</li>
 <td>C09</td>
 <td>Matched signature (part's own signal + own error)</td>
 <td>for each part [volt ↑, rotate ↓, pressure ↑, vibration ↑]: own signal 6h trailing mean beyond P99 (↑) / P1 (↓) of no...</td>
-<td>0.922</td>
-<td>0.963</td>
-<td>350.781</td>
-<td>23.0</td>
-<td>1.609</td>
+<td>0.927</td>
+<td>0.909</td>
+<td>337.885</td>
+<td>20.0</td>
+<td>1.309</td>
 </tr>
 <tr>
 <th>0</th>
@@ -8945,11 +8945,11 @@ use one signal or combine several".</li>
 <td>C08</td>
 <td>Drift confirmed by an error</td>
 <td>(any of [volt ↑, rotate ↓, pressure ↑, vibration ↑]: 6h trailing mean beyond median ± 3.72×MAD-σ of its own machine'...</td>
-<td>0.621</td>
-<td>0.983</td>
-<td>36.975</td>
+<td>0.628</td>
+<td>0.977</td>
+<td>36.253</td>
 <td>24.0</td>
-<td>2.248</td>
+<td>2.192</td>
 </tr>
 <tr>
 <th>2</th>
@@ -8957,11 +8957,11 @@ use one signal or combine several".</li>
 <td>C10</td>
 <td>Drift on an aging part</td>
 <td>for each part [volt ↑, rotate ↓, pressure ↑, vibration ↑]: own signal 6h trailing mean beyond median ± 3.72×MAD-σ of...</td>
-<td>0.406</td>
-<td>0.906</td>
-<td>16.794</td>
+<td>0.413</td>
+<td>0.903</td>
+<td>16.469</td>
 <td>43.0</td>
-<td>4.145</td>
+<td>4.131</td>
 </tr>
 </tbody>
 </table>
@@ -8977,7 +8977,7 @@ use one signal or combine several".</li>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><strong>Conclusion.</strong> Three precursors survive. <strong>C09</strong> (a part's own signal drifting <em>and</em> its own error code) is
-the alarm to act on: 92% precision, 96% coverage, ~1.6 alerts per machine per month, ~23 h ahead. <strong>C10</strong> (drift
+the alarm to act on: 93% precision, 91% coverage, ~1.3 alerts per machine per month, ~20 h ahead. <strong>C10</strong> (drift
 on an aging part) is an earlier, noisier watchlist (~43 h ahead, 41% precision). <strong>C08</strong> (any drift + any error)
 is the fallback that needs no part ↔ code pairing.</p>
 </div>
@@ -9030,8 +9030,10 @@ Each part has its own sensor and its own error code(s), learned from the dev mac
 running (its 99th percentile; for rotation, below its 1st percentile), <strong>and</strong></li>
 <li>that part's own error code has been logged at least once in the last 24 hours.</li>
 </ol>
-<p>On a typical machine that means e.g. voltage above ~192 (normal ~170) with an error1 in the last day, or
-rotation below ~364 (normal ~449) with an error2 or error3.</p>
+<p>On a typical machine that means e.g. voltage above ~193 (normal ~170) with an error1 in the last day, or
+rotation below ~360 (normal ~449) with an error2 or error3.</p>
+<p><strong>For deployment at H = 12, W = 36</strong> (section 11), C09's line is re-tuned to the machine's <em>outlier-proof</em>
+level (median + 3.09 robust standard deviations, P99.9), which crosses earlier in a drift.</p>
 </blockquote>
 <p><strong>C08 · Drift confirmed by any error</strong> (the fallback)</p>
 <blockquote>
@@ -9053,7 +9055,7 @@ a level normal running almost never reaches), <strong>and</strong></li>
 <li>that part has gone longer since its last replacement than it typically does in normal running (its
 median age, about 31–34 days).</li>
 </ol>
-<p>It doesn't wait for the error code, which is why it warns ~43 h ahead instead of ~23 h, at lower precision.</p>
+<p>It doesn't wait for the error code, which is why it warns ~43 h ahead instead of ~20 h, at lower precision.</p>
 </blockquote>
 </div>
 </div>
@@ -9111,7 +9113,7 @@ median age, about 31–34 days).</li>
 <th>1</th>
 <td>C02</td>
 <td>Rotation sags</td>
-<td>0.393</td>
+<td>0.390</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
@@ -9125,14 +9127,14 @@ median age, about 31–34 days).</li>
 <th>3</th>
 <td>C04</td>
 <td>Vibration rises</td>
-<td>0.287</td>
+<td>0.288</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
 <th>4</th>
 <td>C05</td>
 <td>Any signal drifts</td>
-<td>0.438</td>
+<td>0.441</td>
 <td>passed all gates but outranked by three stronger, non-redundant detectors</td>
 </tr>
 <tr>
@@ -9146,7 +9148,7 @@ median age, about 31–34 days).</li>
 <th>6</th>
 <td>C07</td>
 <td>Overdue maintenance</td>
-<td>0.115</td>
+<td>0.106</td>
 <td>collapses with past-only thresholds (Jul–Dec F1 0.00 vs 0.05 with full-year thresholds): its skill leaks from the fu...</td>
 </tr>
 </tbody>
@@ -9217,16 +9219,16 @@ runs, because training uses a random sample of normal hours.)</p>
 <tr>
 <th>1</th>
 <td>rule: C09 Matched signature (part's own signal + own error)</td>
-<td>0.942</td>
-<td>0.922</td>
-<td>0.963</td>
+<td>0.918</td>
+<td>0.927</td>
+<td>0.909</td>
 </tr>
 <tr>
 <th>0</th>
 <td>rule: C08 Drift confirmed by an error</td>
-<td>0.761</td>
-<td>0.621</td>
-<td>0.983</td>
+<td>0.764</td>
+<td>0.628</td>
+<td>0.977</td>
 </tr>
 <tr>
 <th>3</th>
@@ -9238,9 +9240,9 @@ runs, because training uses a random sample of normal hours.)</p>
 <tr>
 <th>2</th>
 <td>rule: C10 Drift on an aging part</td>
-<td>0.561</td>
-<td>0.406</td>
-<td>0.906</td>
+<td>0.566</td>
+<td>0.413</td>
+<td>0.903</td>
 </tr>
 <tr>
 <th>4</th>
@@ -9351,12 +9353,12 @@ model, seed 7). These are the filters and assumptions applied when scoring them:
 <tr>
 <td>Warm-up</td>
 <td>the first 24 h of the year are not scored</td>
-<td>the 6 h and 24 h averages and the 24 h error counts need a day of history</td>
+<td>see "Why ignore the warm-up and the end of the year?" below</td>
 </tr>
 <tr>
 <td>End of the year</td>
 <td>an alert in the last H + W hours is not judged</td>
-<td>we can't see whether a failure followed it</td>
+<td>see below</td>
 </tr>
 <tr>
 <td>Normal operation</td>
@@ -9370,8 +9372,8 @@ model, seed 7). These are the filters and assumptions applied when scoring them:
 </tr>
 <tr>
 <td>Per-machine thresholds (used by all three kept rules)</td>
-<td>fitted on <strong>each machine's own normal hours</strong>, holdout machines included</td>
-<td>a machine's own baseline is the natural reference. Note that "normal" excludes the hours before that machine's failures, so this uses its failure dates. In deployment the baseline would come from past running only; the causal gate and the time-drift audit (thresholds from January–June, scored on July–December) show C09 holds up that way (F1 0.91 vs 0.93)</td>
+<td>a <strong>dev</strong> machine's line comes from its normal hours; a <strong>holdout</strong> machine's line comes from <strong>all of its own hours</strong> (after warm-up), <em>label-free</em></td>
+<td>a per-machine line needs that machine's own readings, but "normal" is built from failure dates (it leaves out the hours before each failure), and a holdout machine's failure dates must not be used. Label-free costs C09 ~0.02 F1 (0.94 → 0.92) and leaves C08 and C10 unchanged, because their outlier-proof lines ignore the few pre-failure hours anyway</td>
 </tr>
 <tr>
 <td>Error codes and part ages</td>
@@ -9380,6 +9382,17 @@ model, seed 7). These are the filters and assumptions applied when scoring them:
 </tr>
 </tbody>
 </table>
+<h3 id="Why-ignore-the-warm-up-and-the-end-of-the-year?">Why ignore the warm-up and the end of the year?<a class="anchor-link" href="#Why-ignore-the-warm-up-and-the-end-of-the-year?">¶</a></h3><p>Both are hours we can't score fairly, and both are small.</p>
+<ul>
+<li><strong>Warm-up (the first 24 hours of 2015).</strong> The rules use 6 h and 24 h averages and 24–48 h error counts. In the
+first day those don't have enough history yet: a "24 h average" at 3 a.m. on 1 January is really a 3-hour
+average. Events whose window would start before the data begins can't be scored either. On the holdout machines
+that is <strong>13 of 363 events</strong>, all stamped 2 January 2015 (their 48 h window would start in 2014).</li>
+<li><strong>End of the year (the last H + W hours, 48 h = 0.55% of the year).</strong> An alert there can't be judged: the data
+stops before we would know whether a failure followed. Counting it as a false alarm would wrongly lower
+precision, and counting it as correct would wrongly raise it, so it is left out (right-censoring). No failures
+are dropped; it only affects which alerts count toward precision.</li>
+</ul>
 <h3 id="Why-mute-alerts-in-the-24-h-after-a-repair,-and-is-it-reasonable?">Why mute alerts in the 24 h after a repair, and is it reasonable?<a class="anchor-link" href="#Why-mute-alerts-in-the-24-h-after-a-repair,-and-is-it-reasonable?">¶</a></h3><p><strong>What it does.</strong> For 24 hours after any failure or any part replacement (scheduled or as a repair), alerts don't
 count, and those hours are left out of "normal operation". About 6% of all hours are muted this way.</p>
 <p><strong>Why.</strong></p>
@@ -9397,7 +9410,7 @@ that just happened, not to the next one.</li>
 <li><strong>It hides almost nothing.</strong> Only <strong>1 of the 719 failures</strong> came within 24 hours of the previous failure on the
 same machine, so the mute almost never covers a real warning.</li>
 <li><strong>The exact length barely matters.</strong> Notebook 05, section 4 re-scores the kept rules with 0, 6, 24 and 72 hours
-of muting: C09's precision moves only from 0.92 to 0.93, and its coverage stays ~0.96.</li>
+of muting: C09's precision moves only from 0.92 to 0.94, and its coverage stays 0.91.</li>
 <li><strong>The risk to watch</strong> in a real plant is a bad repair that fails again within a day. If that matters, the mute
 can be shortened (the audit shows it costs little) or replaced by a separate "post-repair check" alarm.</li>
 </ul>
@@ -9405,7 +9418,7 @@ can be shortened (the audit shows it costs little) or replaced by a separate "po
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=46dc39f4">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2bb34cbb">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9460,44 +9473,99 @@ version 3, five CSVs. It downloads automatically with
 </table>
 <h3 id="The-window:-H-=-0,-W-=-48-wins-on-F1,-but-H-=-12,-W-=-36-is-the-pragmatic-choice">The window: H = 0, W = 48 wins on F1, but H = 12, W = 36 is the pragmatic choice<a class="anchor-link" href="#The-window:-H-=-0,-W-=-48-wins-on-F1,-but-H-=-12,-W-=-36-is-the-pragmatic-choice">¶</a></h3><p><strong>By F1, H = 0, W = 48 wins</strong> ("will it fail within the next 48 hours?", F1 0.945 on dev machines). But with
 H = 0, an alert one hour before a failure counts as a success, which leaves no time to act. <strong>For deployment we
-recommend H = 12, W = 36</strong>: an alert only counts if it comes at least 12 hours before the failure. It <strong>costs
-nothing in F1, provided C09's threshold is re-tuned for the buffer</strong>:</p>
-<table>
+recommend H = 12, W = 36, with the rules re-tuned for it</strong>: an alert only counts if it comes at least 12 hours
+before the failure. It <strong>costs nothing in F1, provided C09's threshold is re-tuned for the buffer</strong>.
+Notebook 04, section 7 re-tunes each kept rule for this window on the dev machines and scores it on holdout:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput" id="cell-id=a78ae96d">
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
 <thead>
-<tr>
-<th>C09 at H = 12, W = 36 (holdout machines)</th>
-<th>F1</th>
-<th>Precision</th>
-<th>Coverage</th>
+<tr style="text-align: right;">
+<th></th>
+<th>rule</th>
+<th>F1_at_0_48</th>
+<th>F1_as_kept_at_12_36</th>
+<th>F1_retuned_at_12_36</th>
+<th>precision_retuned</th>
+<th>coverage_retuned</th>
+<th>setting_retuned</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>kept unchanged (as tuned for H = 0, W = 48)</td>
-<td>0.89</td>
-<td>92%</td>
-<td>86%</td>
+<th>0</th>
+<td>C08</td>
+<td>0.764</td>
+<td>0.744</td>
+<td>0.744</td>
+<td>0.628</td>
+<td>0.914</td>
+<td>roll6·robust·p99.99·k1</td>
 </tr>
 <tr>
-<td>re-tuned for the 12 h buffer, on dev machines as before</td>
-<td><strong>0.94</strong></td>
-<td>90%</td>
-<td>99%</td>
+<th>1</th>
+<td>C09</td>
+<td>0.918</td>
+<td>0.814</td>
+<td>0.941</td>
+<td>0.898</td>
+<td>0.989</td>
+<td>roll6·robust·p99.9·k1</td>
 </tr>
 <tr>
-<td>for reference: H = 0, W = 48</td>
-<td>0.94</td>
-<td>92%</td>
-<td>96%</td>
+<th>2</th>
+<td>C10</td>
+<td>0.566</td>
+<td>0.564</td>
+<td>0.564</td>
+<td>0.413</td>
+<td>0.889</td>
+<td>roll6·robust·p99.99·k1</td>
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=59efbf88">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <ul>
-<li><strong>Unchanged, C09 loses coverage:</strong> for 35 of 337 failures (10%) its first alert comes in the final 12 hours,
-which no longer counts. Its precision doesn't change.</li>
-<li><strong>Re-tuned, it recovers fully:</strong> the selection picks a slightly more sensitive line (per machine, outlier-proof,
-P99.9 instead of P99), which alerts earlier. Holdout F1 is then the same as for the F1-best window. On the dev
-grid (notebook 04, section 6) the two windows differ by only 0.01 (0.945 vs 0.936), within the noise;</li>
+<li><strong>Unchanged, C09 loses coverage:</strong> for 64 of 318 failures (20%) its first alert comes in the final 12 hours,
+which no longer counts. Its precision doesn't change. So the 12 h buffer is only free if C09 is re-tuned.</li>
+<li><strong>Re-tuned, it recovers fully:</strong> the selection (on dev machines) picks C09's outlier-proof line (per machine,
+median + robust spread, P99.9 instead of P99), which crosses earlier in a drift. Holdout F1 is then 0.94, a
+little <em>higher</em> than at H = 0, W = 48, because that line doesn't depend on which hours count as normal. On the
+dev grid (notebook 04, section 6) the two windows differ by only 0.01 (0.945 vs 0.936), within the noise;</li>
+<li><strong>C08 and C10 keep their settings</strong> (already the best on dev at H = 12, W = 36) and barely move: 0.76 → 0.74
+and 0.57 → 0.56;</li>
 <li>W = 36 still reaches back to where the drift starts (48 h before a failure) and still contains the part's own
 error code (logged 24 h before), so the window covers the whole precursor;</li>
 <li>a bigger buffer would not work: F1 collapses once the window starts 36 h or more ahead.</li>

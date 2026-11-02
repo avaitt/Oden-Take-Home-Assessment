@@ -253,13 +253,19 @@ def thresholds(f: np.ndarray, fit: np.ndarray, norm: str, q: float,
     """Per-machine threshold column (M,1) fitted on NORMAL hours only.
 
     global/model thresholds are fitted on DEV machines only, so holdout machines
-    never shape the threshold. A per-machine threshold uses that machine's own
-    normal hours (no event information from other machines).
+    never shape the threshold. A per-machine threshold needs that machine's own
+    readings. For a DEV machine it uses its normal hours. For any other machine
+    (holdout) it must not use that machine's failure dates, and "normal" is built
+    from them (it leaves out the hours before each failure). So a holdout machine's
+    line comes from ALL its own hours in the fitting period (`label_free`): the same
+    span of time as `fit`, but ignoring which of its hours came before a failure.
     """
     M = f.shape[0]
     thr = np.full(M, np.nan)
     sel = np.zeros(M, dtype=bool)
     sel[fit_machines] = True
+    label_free = fit.any(axis=0)          # hours inside the fitting period, for any machine
+    own = lambda m: fit[m] if sel[m] else label_free
     if norm == "global":
         vals = f[sel[:, None] & fit]
         thr[:] = np.nanpercentile(vals, q)
@@ -269,7 +275,7 @@ def thresholds(f: np.ndarray, fit: np.ndarray, norm: str, q: float,
             thr[models == mdl] = np.nanpercentile(f[rows[:, None] & fit], q)
     elif norm == "machine":
         for m in range(M):
-            v = f[m, fit[m]]
+            v = f[m, own(m)]
             thr[m] = np.nanpercentile(v, q) if np.isfinite(v).any() else np.nan
     elif norm == "robust":
         # Per machine: median + z_q * 1.4826 * MAD of normal hours, where z_q is
@@ -283,7 +289,7 @@ def thresholds(f: np.ndarray, fit: np.ndarray, norm: str, q: float,
         from scipy.stats import norm as _N
         z = _N.ppf(q / 100)
         for m in range(M):
-            v = f[m, fit[m]]
+            v = f[m, own(m)]
             v = v[np.isfinite(v)]
             if len(v):
                 med = np.median(v)
