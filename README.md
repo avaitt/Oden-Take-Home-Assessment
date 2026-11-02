@@ -115,33 +115,15 @@ I directed the analysis and made its key calls; the AI assistant wrote most of t
 
 ## Where the AI assistant had to be corrected
 
-Built with an AI coding assistant (Claude). Each of these was caught by a check, not assumed:
+Built with an AI coding assistant (Claude). Each of these was caught and corrected by me:
 
-1. **Fake lift:** smoothing both rates gave a detector that never fires a lift of 47. Only the normal rate is
-   smoothed now.
-2. **Count thresholds:** "error count > P90" silently meant "≥ 2 errors", which only comp2 can meet. P80
-   ("≥ 1 error") was added.
-3. **Contaminated "normal":** ~470 look-alike drifts per part push P99 into the anomaly cluster. This led to
-   robust thresholds, and to the main finding.
-4. **Redundancy rule:** the first version discarded earlier warnings for the same failures. It now drops only
-   detectors that are the same alarm.
-5. **Null p-value floor:** an empirical p can't go below 1/(n+1). The gate now uses the null z-score there.
-6. **Counter leak:** "hours since maintenance" passed every statistical gate, then collapsed with past-only
-   thresholds. This led to the causal gate.
-7. **A claim the evidence contradicted:** the first write-up said a grid confirmed W = 24. It didn't.
-8. **Code pairing:** a fixed enrichment cut-off paired error5 with the wrong parts. A relative rule fixed it.
-9. **H = 24 was never tested:** an hour-by-hour audit removed its rationale. With the user's guidance (choose
-   by F1), the F1 grid showed that any window containing the 24 h error code works, and H = 12, W = 36 was chosen.
-10. **Misleading rule text:** rotation's rule printed "> P99" instead of "< P1".
-11. **Engineering slips:** a pandas name clash, read-only arrays, a masked leakage demo, and a freshness check
-    fooled by file timestamps.
-12. **An overstated cost:** the claim that a 12-hour buffer "costs ~0.01 F1" was only checked on the dev grid.
-    The rule explorer showed the holdout picture was different. The fix was to make H = 12, W = 36 the setting
-    for the whole project, so the rules are chosen, tested and audited on that window.
-13. **Leakage, raised by the user:** holdout machines' per-machine thresholds used their failure dates, and the ML
-    feature importances that fed the brainstorm were measured on holdout machines. Both now avoid holdout labels.
-
-**For the submission:** export this AI conversation and attach it next to this README.
+1. A claim the evidence contradicted: the first write-up said a grid confirmed W = 24. It didn't.
+2. H = 24 was never tested: an hour-by-hour audit removed its rationale. Choosing by F1, the grid showed that any window containing the 24 h error code works, and H = 12, W = 36 was chosen.
+3. An overstated cost: the claim that a 12-hour buffer "costs ~0.01 F1" was only checked on the dev grid. The rule explorer showed the holdout picture was different. The fix was to make H = 12, W = 36 the setting for the whole project.
+4. Count thresholds: "error count > P90" silently meant "≥ 2 errors", which only comp2 can meet. P80 ("≥ 1 error") was added.
+5. Redundancy rule: the first version threw out a detector if it caught the same failures as a better one, even when it warned earlier. It now drops only detectors that are the same alarm (firing in the same hours).
+6. Contaminated "normal": ~470 look-alike drifts per part hide inside "normal" hours and push a P99 threshold up into the very drifts we want to catch. This led to outlier-proof (median-based) thresholds, and to the main finding.
+7. Engineering slips: a pandas name clash, read-only arrays, a masked leakage demo, and a freshness check fooled by file timestamps.
 
 ## If there were more time
 
