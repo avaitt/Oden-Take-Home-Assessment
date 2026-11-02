@@ -4,6 +4,17 @@ Take-home for Oden Technologies (Forward Deployed Data Scientist), **Option 1**.
 workflow in Oden's post, [Agentic Root Cause Analysis](https://engineering.oden.io/blog/agentic-root-cause-analysis):
 brainstorm candidate precursors, turn each into a simple fixed rule, test them honestly, and keep up to three.
 
+## Website
+
+**[avaitt.github.io/Oden-Take-Home-Assessment](https://avaitt.github.io/Oden-Take-Home-Assessment/)**: the findings
+in a browser, no setup needed.
+
+* **Write-up:** notebook 06 as a web page: the answer, the three rules written out, and how they were built and tested.
+* **Rule explorer:** pick any window (H, W) and event (any failure or a single part) and see how C09, C08 and C10
+  score on the holdout machines: F1, precision, coverage, lift, alerts per machine-month and lead time.
+* **Machine explorer:** pick any machine and sensor to see its year of readings, with every error code, part
+  replacement and failure marked.
+
 ## Read the notebooks, in order
 
 | Notebook | Brief section | What it covers |
@@ -37,10 +48,8 @@ the write-up, reads those five files and computes nothing.
 To try other settings, change `Config(...)` (H, W, event) at the top of each notebook and re-run them all; the
 write-up warns if the notebooks were run with different settings or if a file is out of date.
 
-**Website:** [avaitt.github.io/Oden-Take-Home-Assessment](https://avaitt.github.io/Oden-Take-Home-Assessment/) has
-three pages: the write-up (notebook 06), a **rule explorer** (C08, C09 and C10 scored on the holdout machines for any H,
-W and event) and a **machine explorer** (any machine's year of any sensor, with its errors, replacements and failures).
-It is built from `docs/` by `python site/build_site.py` (~2 min, after running the notebooks).
+**Website build:** the site below is built from `docs/` by `python site/build_site.py` (~2 min, after running the
+notebooks).
 
 **Data:** [Microsoft Azure Predictive Maintenance on Kaggle](https://www.kaggle.com/datasets/arnabbiswas1/microsoft-azure-predictive-maintenance)
 (version 3, five CSVs). It downloads on first use with
