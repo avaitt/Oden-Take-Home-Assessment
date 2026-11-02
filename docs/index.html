@@ -8700,40 +8700,22 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="4.5-%C2%B7-Notebook-05:-audit-(trying-to-break-the-results)">4.5 · Notebook 05: audit (trying to break the results)<a class="anchor-link" href="#4.5-%C2%B7-Notebook-05:-audit-(trying-to-break-the-results)">¶</a></h3><table>
-<thead>
-<tr>
-<th>Trap</th>
-<th>Result</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Keeping the lucky ones</td>
-<td>kept detectors sit far above the shuffled-timing null (z ≈ 42–53); the best of 300 pure-noise detectors scores F1 0.09 on dev and 0.07 on holdout</td>
-</tr>
-<tr>
-<td>Leakage through the event hour</td>
-<td>scoring the failure hour turns "a repair was logged" into a fake perfect detector (lift ~67,000); our windows never score it</td>
-</tr>
-<tr>
-<td>Counters that leak the future</td>
-<td>"hours since maintenance" shows huge lifts (600–2,000), then drops to F1 ≈ 0 with past-only thresholds; the causal gate rejects it</td>
-</tr>
-<tr>
-<td>Time drift</td>
-<td>thresholds from January–June work almost as well on July–December (C09 F1 0.87 vs 0.92; C08 and C10 unchanged)</td>
-</tr>
-<tr>
-<td>Machine mode changes</td>
-<td>C09 holds across every machine model and age band (precision 0.88–0.94, coverage 0.92–0.97)</td>
-</tr>
-<tr>
-<td>Clustered events</td>
-<td>too rare to matter (3 within a week); intervals resample whole machines anyway</td>
-</tr>
-</tbody>
-</table>
+<h3 id="4.5-%C2%B7-Notebook-05:-audit-(trying-to-break-the-results)">4.5 · Notebook 05: audit (trying to break the results)<a class="anchor-link" href="#4.5-%C2%B7-Notebook-05:-audit-(trying-to-break-the-results)">¶</a></h3><p>Notebook 05 tries to break the shortlist with the classic traps. Each passes:</p>
+<ul>
+<li><strong>Luck from trying many ideas.</strong> Notebook 05 builds 300 fake rules from pure random noise (no link to failures
+at all), tunes them exactly like the real rules, and keeps the one that scores best on the dev machines. Even
+that "winner" scores only about <strong>0.09</strong> on dev and <strong>0.07</strong> on holdout, far below C09's 0.94. So picking the best
+of many tries manufactures almost no skill, and the kept rules also beat shuffled-in-time copies of themselves
+by a wide margin.</li>
+<li><strong>Leakage through the failure hour.</strong> Scoring the failure hour itself would turn "a repair was logged" into a
+fake perfect rule; the failure hour is never scored.</li>
+<li><strong>Counters that leak the future.</strong> "Hours since maintenance" looks excellent until it may only use past data,
+then collapses; the causal gate rejects it (C07).</li>
+<li><strong>Time drift.</strong> Rules set up on January–June alone still work on July–December (table below).</li>
+<li><strong>Different machines.</strong> C09 works on every machine model and age band (precision 0.88–0.94, coverage 0.92–0.97).</li>
+<li><strong>Clustered failures.</strong> Too rare to matter (3 within a week of each other), and the intervals resample whole
+machines anyway.</li>
+</ul>
 </div>
 </div>
 </div>
@@ -8742,12 +8724,6 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>best of 300 pure-noise detectors: dev F1 0.0861, holdout F1 0.071
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
@@ -8768,29 +8744,35 @@ logged 24 h before a failure, and collapses once the window starts 36 h or more 
 <thead>
 <tr style="text-align: right;">
 <th></th>
-<th>id</th>
-<th>F1_full_year_thresholds</th>
-<th>F1_Jan_Jun_thresholds</th>
+<th>result</th>
+<th>meaning</th>
+</tr>
+<tr>
+<th>check</th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<th>0</th>
-<td>C08</td>
-<td>0.749</td>
-<td>0.754</td>
+<th>Best of 300 rules built from random noise, picked on dev machines</th>
+<td>F1 0.09 on dev, 0.07 on holdout</td>
+<td>trying many rules finds almost nothing by luck</td>
 </tr>
 <tr>
-<th>1</th>
-<td>C09</td>
-<td>0.920</td>
-<td>0.873</td>
+<th>C09: set up on Jan–Jun only, scored on Jul–Dec</th>
+<td>F1 0.87 (vs 0.92 set up on the full year)</td>
+<td>still works on months it has not seen</td>
 </tr>
 <tr>
-<th>2</th>
-<td>C10</td>
-<td>0.550</td>
-<td>0.571</td>
+<th>C08: set up on Jan–Jun only, scored on Jul–Dec</th>
+<td>F1 0.75 (vs 0.75 set up on the full year)</td>
+<td>still works on months it has not seen</td>
+</tr>
+<tr>
+<th>C10: set up on Jan–Jun only, scored on Jul–Dec</th>
+<td>F1 0.57 (vs 0.55 set up on the full year)</td>
+<td>still works on months it has not seen</td>
 </tr>
 </tbody>
 </table>
