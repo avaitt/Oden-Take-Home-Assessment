@@ -7840,7 +7840,7 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 <tbody>
 <tr>
 <td>Your shortlist of surviving precursors</td>
-<td>sections 1 and 6 (each rule in plain English)</td>
+<td>sections 1 and 6 (each rule written out in full)</td>
 </tr>
 <tr>
 <td>The candidates you rejected and why</td>
@@ -7856,7 +7856,7 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 </tr>
 <tr>
 <td>Your main design choices (H, W, thresholds, how you defined normal)</td>
-<td>section 11 (incl. why H = 12, W = 36 for deployment, with precedent)</td>
+<td>section 11 (incl. why H = 12, W = 36, with precedent)</td>
 </tr>
 <tr>
 <td>If you run out of time: what you'd do next</td>
@@ -7971,13 +7971,13 @@ notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 each part's own sensor signal shifts about <strong>48 hours</strong> before it fails. But each part's signal also shifts
 ~470 times a year <em>without</em> a failure, so a sensor alone can't be trusted (at most ~38% of its alarms are real).
 What separates real from false shifts is <strong>the part's own error code</strong>, logged 24 hours before the failure.
-The strongest precursor, <strong>C09 "matched signature"</strong> (a part's own signal drifting <em>and</em> its own error code
-logged), scores <strong>F1 0.92 on machines it never saw</strong>: it catches <strong>91%</strong> of failures, <strong>93%</strong> of its alarms are
-real, and it warns about <strong>20 hours</strong> ahead. Two more survive: <strong>C10</strong> (drift on a worn part) warns earlier
-(~43 h) but is right only 41% of the time, and <strong>C08</strong> (any drift + any error) is a simpler fallback. By F1 the
-best window is "will it fail within the next 48 hours?" (H = 0, W = 48); for deployment we recommend requiring
-half a day of warning (H = 12, W = 36), which costs nothing once C09's threshold is re-tuned for it (section 11). The data is synthetic and unusually clean, so
-treat the absolute numbers as optimistic and the method as the transferable result.</p>
+Alerts are scored on a window of <strong>H = 12, W = 36</strong>: an alert counts if it comes between 48 and 12 hours before a
+failure, so every alert that counts leaves at least half a day to act. The strongest precursor, <strong>C09 "matched
+signature"</strong> (a part's own signal drifting <em>and</em> its own error code logged), scores <strong>F1 0.94 on machines it never
+saw</strong>: it catches <strong>99%</strong> of failures, <strong>90%</strong> of its alarms are real, and it warns about <strong>24 hours</strong> ahead. Two
+more survive: <strong>C10</strong> (drift on a worn part) warns earlier (~43 h) but is right only 41% of the time, and <strong>C08</strong>
+(any drift + any error) is a simpler fallback. The data is synthetic and unusually clean, so treat the absolute
+numbers as optimistic and the method as the transferable result.</p>
 </div>
 </div>
 </div>
@@ -8005,7 +8005,7 @@ treat the absolute numbers as optimistic and the method as the transferable resu
 </tr>
 <tr>
 <td><strong>H (lead time)</strong> and <strong>W (window)</strong></td>
-<td>for a failure at time T, an alert counts if it falls between T − (H + W) and T − H. H = 0, W = 48 means "within the 48 hours before the failure". The failure hour itself is never scored.</td>
+<td>for a failure at time T, an alert counts if it falls between T − (H + W) and T − H. <strong>H = 12, W = 36</strong> (the window used here) means "between 48 and 12 hours before the failure".</td>
 </tr>
 <tr>
 <td><strong>Normal operation</strong></td>
@@ -8436,7 +8436,7 @@ so ideas are compared fairly rather than on a lucky first draft.</p>
 <h3 id="4.3-%C2%B7-Notebook-03:-ML-benchmark">4.3 · Notebook 03: ML benchmark<a class="anchor-link" href="#4.3-%C2%B7-Notebook-03:-ML-benchmark">¶</a></h3><ul>
 <li>Three models (gradient boosting with and without the maintenance counters, and logistic regression), trained
 on dev machines from 32 features and scored exactly like the rules. The best, logistic regression, reaches
-F1 ~0.63, well below C09 (0.92); section 8 compares them and explains why the rules win.</li>
+F1 ~0.63, well below C09; section 8 compares them and explains why the rules win.</li>
 <li><strong>What the models lean on:</strong> smoothed signals (6 h and 24 h averages) and each part's own error counts, which
 pointed the candidates toward "smoothed drift + error code".</li>
 </ul>
@@ -8516,12 +8516,12 @@ pointed the candidates toward "smoothed drift + error code".</li>
 <h3 id="4.4-%C2%B7-Notebook-04:-test-and-select">4.4 · Notebook 04: test and select<a class="anchor-link" href="#4.4-%C2%B7-Notebook-04:-test-and-select">¶</a></h3><ul>
 <li><strong>All ten ideas</strong> were scored with lift, precision and coverage, with thresholds from normal operation only.
 Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the others lose: section 7.</li>
-<li><strong>Kept</strong> (holdout machines, any failure): <strong>C09</strong> F1 0.92 (93% precision, 91% coverage, ~20 h ahead);
-<strong>C08</strong> F1 0.76 (63%, 98%); <strong>C10</strong> F1 0.57 (41%, 90%, ~43 h ahead).</li>
+<li><strong>Kept:</strong> <strong>C09</strong>, <strong>C08</strong> and <strong>C10</strong> (section 6 has their scores and the rules in full).</li>
 <li><strong>Smoothing:</strong> a 6 h average works best; CUSUM is worst.</li>
-<li><strong>Choosing H and W:</strong> one F1 grid of 100 windows. By F1: <strong>H = 0, W = 48</strong>; recommended for deployment:
-<strong>H = 12, W = 36</strong>, with C09 re-tuned for it (04 section 7; here section 11).</li>
-<li><strong>Every event type:</strong> C09 ranks first for any failure and for each part separately (F1 0.91–0.99).</li>
+<li><strong>Choosing H and W:</strong> one F1 grid of 100 windows. F1 is flat for every window that contains the error code
+logged 24 h before a failure, and collapses once the window starts 36 h or more ahead. The window is
+<strong>H = 12, W = 36</strong> (section 11).</li>
+<li><strong>Every event type:</strong> C09 ranks first for any failure and for each part separately.</li>
 </ul>
 </div>
 </div>
@@ -8718,7 +8718,7 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>H x W grid (dev F1): H=0, W=48 -&gt; 0.945 | H=12, W=36 -&gt; 0.936 | one-day window H=0, W=24 -&gt; 0.935 | windows starting &gt;= 36 h ahead: at most 0.24
+<pre>H x W grid (dev F1): chosen H=12, W=36 -&gt; 0.936 | best anywhere -&gt; 0.948 | windows starting &gt;= 36 h ahead: at most 0.24
 </pre>
 </div>
 </div>
@@ -8886,7 +8886,7 @@ use one signal or combine several".</li>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="6-%C2%B7-Shortlist:-the-surviving-precursors-(%22any-failure%22,-holdout-machines)">6 · Shortlist: the surviving precursors ("any failure", holdout machines)<a class="anchor-link" href="#6-%C2%B7-Shortlist:-the-surviving-precursors-(%22any-failure%22,-holdout-machines)">¶</a></h2>
+<h2 id="6-%C2%B7-Shortlist:-the-surviving-precursors-(%22any-failure%22,-holdout-machines,-H-=-12,-W-=-36)">6 · Shortlist: the surviving precursors ("any failure", holdout machines, H = 12, W = 36)<a class="anchor-link" href="#6-%C2%B7-Shortlist:-the-surviving-precursors-(%22any-failure%22,-holdout-machines,-H-=-12,-W-=-36)">¶</a></h2>
 </div>
 </div>
 </div>
@@ -8915,10 +8915,9 @@ use one signal or combine several".</li>
 <thead>
 <tr style="text-align: right;">
 <th></th>
-<th>rank</th>
 <th>id</th>
 <th>precursor</th>
-<th>rule</th>
+<th>F1</th>
 <th>precision</th>
 <th>coverage</th>
 <th>lift</th>
@@ -8928,38 +8927,35 @@ use one signal or combine several".</li>
 </thead>
 <tbody>
 <tr>
-<th>1</th>
-<td>1</td>
-<td>C09</td>
-<td>Matched signature (part's own signal + own error)</td>
-<td>for each part [volt ↑, rotate ↓, pressure ↑, vibration ↑]: own signal 6h trailing mean beyond P99 (↑) / P1 (↓) of no...</td>
-<td>0.927</td>
-<td>0.909</td>
-<td>337.885</td>
-<td>20.0</td>
-<td>1.309</td>
-</tr>
-<tr>
 <th>0</th>
-<td>2</td>
 <td>C08</td>
 <td>Drift confirmed by an error</td>
-<td>(any of [volt ↑, rotate ↓, pressure ↑, vibration ↑]: 6h trailing mean beyond median ± 3.72×MAD-σ of its own machine'...</td>
+<td>0.744</td>
 <td>0.628</td>
-<td>0.977</td>
-<td>36.253</td>
+<td>0.914</td>
+<td>27.959</td>
 <td>24.0</td>
 <td>2.192</td>
 </tr>
 <tr>
+<th>1</th>
+<td>C09</td>
+<td>Matched signature (part's own signal + own error)</td>
+<td>0.941</td>
+<td>0.898</td>
+<td>0.989</td>
+<td>236.379</td>
+<td>24.0</td>
+<td>1.478</td>
+</tr>
+<tr>
 <th>2</th>
-<td>3</td>
 <td>C10</td>
 <td>Drift on an aging part</td>
-<td>for each part [volt ↑, rotate ↓, pressure ↑, vibration ↑]: own signal 6h trailing mean beyond median ± 3.72×MAD-σ of...</td>
+<td>0.564</td>
 <td>0.413</td>
-<td>0.903</td>
-<td>16.469</td>
+<td>0.889</td>
+<td>16.108</td>
 <td>43.0</td>
 <td>4.131</td>
 </tr>
@@ -8977,7 +8973,7 @@ use one signal or combine several".</li>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><strong>Conclusion.</strong> Three precursors survive. <strong>C09</strong> (a part's own signal drifting <em>and</em> its own error code) is
-the alarm to act on: 93% precision, 91% coverage, ~1.3 alerts per machine per month, ~20 h ahead. <strong>C10</strong> (drift
+the alarm to act on: 90% precision, 99% coverage, ~1.5 alerts per machine per month, ~24 h ahead. <strong>C10</strong> (drift
 on an aging part) is an earlier, noisier watchlist (~43 h ahead, 41% precision). <strong>C08</strong> (any drift + any error)
 is the fallback that needs no part ↔ code pairing.</p>
 </div>
@@ -8989,14 +8985,19 @@ is the fallback that needs no part ↔ code pairing.</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="The-three-kept-rules,-in-plain-English">The three kept rules, in plain English<a class="anchor-link" href="#The-three-kept-rules,-in-plain-English">¶</a></h3><p>Each rule is checked every hour on every machine. "6 h average" means the mean of the last 6 hourly readings.
-Each part has its own sensor and its own error code(s), learned from the dev machines:</p>
+<h3 id="The-three-rules,-written-out">The three rules, written out<a class="anchor-link" href="#The-three-rules,-written-out">¶</a></h3><p>Each rule is checked <strong>every hour on every machine</strong>. Shared definitions:</p>
+<ul>
+<li><strong>6 h average</strong>: the mean of the sensor's last 6 hourly readings.</li>
+<li><strong>Robust spread</strong> of a sensor: 1.4826 × the median absolute deviation of its 6 h average, from that machine's
+own readings (normal-operation hours for dev machines; all of its hours for holdout machines).</li>
+<li><strong>Each part's own sensor and error code(s)</strong>, learned from the dev machines:</li>
+</ul>
 <table>
 <thead>
 <tr>
 <th>Part</th>
-<th>Its sensor (direction of a fault)</th>
-<th>Its error code(s)</th>
+<th>Sensor (direction of a fault)</th>
+<th>Own error code(s)</th>
 </tr>
 </thead>
 <tbody>
@@ -9022,41 +9023,28 @@ Each part has its own sensor and its own error code(s), learned from the dev mac
 </tr>
 </tbody>
 </table>
-<p><strong>C09 · Matched signature</strong> (the alarm to act on)</p>
-<blockquote>
-<p>Raise an alert when, <strong>for the same part</strong>, both are true:</p>
+<p><strong>C09 · Matched signature</strong> (the alarm to act on). Raise an alert when, <strong>for any one part</strong>, both hold:</p>
 <ol>
-<li>that part's sensor (6 h average) is beyond the level this machine reaches only 1% of the time in normal
-running (its 99th percentile; for rotation, below its 1st percentile), <strong>and</strong></li>
-<li>that part's own error code has been logged at least once in the last 24 hours.</li>
+<li>that part's sensor (6 h average) is <strong>more than 3.09 robust spreads</strong> from the machine's median, in the fault
+direction (the machine's P99.9 level). On a typical machine: voltage above ~190 (normal ~170), rotation
+below ~383 (normal ~449), pressure above ~113 (normal ~100), vibration above ~47 (normal ~40); <strong>and</strong></li>
+<li>that part's <strong>own error code</strong> has been logged <strong>at least once in the last 24 hours</strong>.</li>
 </ol>
-<p>On a typical machine that means e.g. voltage above ~193 (normal ~170) with an error1 in the last day, or
-rotation below ~360 (normal ~449) with an error2 or error3.</p>
-<p><strong>For deployment at H = 12, W = 36</strong> (section 11), C09's line is re-tuned to the machine's <em>outlier-proof</em>
-level (median + 3.09 robust standard deviations, P99.9), which crosses earlier in a drift.</p>
-</blockquote>
-<p><strong>C08 · Drift confirmed by any error</strong> (the fallback)</p>
-<blockquote>
-<p>Raise an alert when both are true:</p>
+<p><strong>C08 · Drift + any error</strong> (the fallback). Raise an alert when both hold:</p>
 <ol>
-<li><strong>any</strong> of the four sensors (6 h average) has moved far from this machine's normal level in its fault
-direction: more than 3.72 "robust standard deviations" from its normal median (median ± 3.72 × MAD-σ,
-a level normal running almost never reaches), <strong>and</strong></li>
-<li><strong>any</strong> error code has been logged in the last 48 hours.</li>
+<li><strong>any</strong> of the four sensors (6 h average) is <strong>more than 3.72 robust spreads</strong> from the machine's median, in
+its fault direction (P99.99: on a typical machine voltage above ~194, rotation below ~370, pressure above
+~116, vibration above ~48); <strong>and</strong></li>
+<li><strong>any</strong> error code has been logged <strong>at least once in the last 48 hours</strong>.</li>
 </ol>
-<p>It does not care whether the sensor and the error belong to the same part, so it needs no learned pairing.</p>
-</blockquote>
-<p><strong>C10 · Drift on an aging part</strong> (the early warning)</p>
-<blockquote>
-<p>Raise an alert when, <strong>for the same part</strong>, both are true:</p>
+<p><strong>C10 · Drift on an aging part</strong> (the early warning). Raise an alert when, <strong>for any one part</strong>, both hold:</p>
 <ol>
-<li>that part's sensor (6 h average) has moved far from this machine's normal level in its fault direction
-(median ± 3.72 × MAD-σ, as in C08), <strong>and</strong></li>
-<li>that part has gone longer since its last replacement than it typically does in normal running (its
-median age, about 31–34 days).</li>
+<li>that part's sensor (6 h average) is <strong>more than 3.72 robust spreads</strong> from the machine's median, in the fault
+direction (the same level as C08); <strong>and</strong></li>
+<li>that part has gone <strong>longer since its last replacement than its median in normal running</strong>: about 33 days
+for comp1, 31 for comp2, 34 for comp3 and 33 for comp4.</li>
 </ol>
-<p>It doesn't wait for the error code, which is why it warns ~43 h ahead instead of ~20 h, at lower precision.</p>
-</blockquote>
+<p>An alert is "on" for as long as the conditions hold; a new alert starts each time it switches from off to on.</p>
 </div>
 </div>
 </div>
@@ -9373,7 +9361,7 @@ model, seed 7). These are the filters and assumptions applied when scoring them:
 <tr>
 <td>Per-machine thresholds (used by all three kept rules)</td>
 <td>a <strong>dev</strong> machine's line comes from its normal hours; a <strong>holdout</strong> machine's line comes from <strong>all of its own hours</strong> (after warm-up), <em>label-free</em></td>
-<td>a per-machine line needs that machine's own readings, but "normal" is built from failure dates (it leaves out the hours before each failure), and a holdout machine's failure dates must not be used. Label-free costs C09 ~0.02 F1 (0.94 → 0.92) and leaves C08 and C10 unchanged, because their outlier-proof lines ignore the few pre-failure hours anyway</td>
+<td>a per-machine line needs that machine's own readings, but "normal" is built from failure dates (it leaves out the hours before each failure), and a holdout machine's failure dates must not be used</td>
 </tr>
 <tr>
 <td>Error codes and part ages</td>
@@ -9446,13 +9434,13 @@ version 3, five CSVs. It downloads automatically with
 </tr>
 <tr>
 <td><strong>H</strong> (lead time)</td>
-<td>0 h (the failure hour itself is never scored)</td>
-<td>chosen by F1 on a grid of 100 windows (notebook 04, section 6): the framing "will it fail within the next N hours?", with N where F1 reaches its plateau. The stamp audit (notebook 01, section 3) shows no post-failure data before the stamps, so no lead is needed to avoid leakage. Alert lead times are reported separately (C09 ~23 h, C10 ~43 h). For deployment see "The window" below</td>
+<td><strong>12 h</strong></td>
+<td>every alert that counts leaves at least half a day to act; see "Why H = 12, W = 36" below</td>
 </tr>
 <tr>
 <td><strong>W</strong> (window)</td>
-<td>48 h</td>
-<td>"will it fail within the next 48 h?": long enough to cover the whole precursor, which starts 48 h before a failure; F1 reaches its plateau at W = 48 (~0.945 vs ~0.935 for a one-day window)</td>
+<td><strong>36 h</strong></td>
+<td>reaches back to where each part's signal starts drifting, 48 h before a failure, so the window covers the whole precursor</td>
 </tr>
 <tr>
 <td><strong>Normal operation</strong></td>
@@ -9471,106 +9459,15 @@ version 3, five CSVs. It downloads automatically with
 </tr>
 </tbody>
 </table>
-<h3 id="The-window:-H-=-0,-W-=-48-wins-on-F1,-but-H-=-12,-W-=-36-is-the-pragmatic-choice">The window: H = 0, W = 48 wins on F1, but H = 12, W = 36 is the pragmatic choice<a class="anchor-link" href="#The-window:-H-=-0,-W-=-48-wins-on-F1,-but-H-=-12,-W-=-36-is-the-pragmatic-choice">¶</a></h3><p><strong>By F1, H = 0, W = 48 wins</strong> ("will it fail within the next 48 hours?", F1 0.945 on dev machines). But with
-H = 0, an alert one hour before a failure counts as a success, which leaves no time to act. <strong>For deployment we
-recommend H = 12, W = 36, with the rules re-tuned for it</strong>: an alert only counts if it comes at least 12 hours
-before the failure. It <strong>costs nothing in F1, provided C09's threshold is re-tuned for the buffer</strong>.
-Notebook 04, section 7 re-tunes each kept rule for this window on the dev machines and scores it on holdout:</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput" id="cell-id=a78ae96d">
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
-<div>
-<style scoped="">
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-<thead>
-<tr style="text-align: right;">
-<th></th>
-<th>rule</th>
-<th>F1_at_0_48</th>
-<th>F1_as_kept_at_12_36</th>
-<th>F1_retuned_at_12_36</th>
-<th>precision_retuned</th>
-<th>coverage_retuned</th>
-<th>setting_retuned</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th>0</th>
-<td>C08</td>
-<td>0.764</td>
-<td>0.744</td>
-<td>0.744</td>
-<td>0.628</td>
-<td>0.914</td>
-<td>roll6·robust·p99.99·k1</td>
-</tr>
-<tr>
-<th>1</th>
-<td>C09</td>
-<td>0.918</td>
-<td>0.814</td>
-<td>0.941</td>
-<td>0.898</td>
-<td>0.989</td>
-<td>roll6·robust·p99.9·k1</td>
-</tr>
-<tr>
-<th>2</th>
-<td>C10</td>
-<td>0.566</td>
-<td>0.564</td>
-<td>0.564</td>
-<td>0.413</td>
-<td>0.889</td>
-<td>roll6·robust·p99.99·k1</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=59efbf88">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<ul>
-<li><strong>Unchanged, C09 loses coverage:</strong> for 64 of 318 failures (20%) its first alert comes in the final 12 hours,
-which no longer counts. Its precision doesn't change. So the 12 h buffer is only free if C09 is re-tuned.</li>
-<li><strong>Re-tuned, it recovers fully:</strong> the selection (on dev machines) picks C09's outlier-proof line (per machine,
-median + robust spread, P99.9 instead of P99), which crosses earlier in a drift. Holdout F1 is then 0.94, a
-little <em>higher</em> than at H = 0, W = 48, because that line doesn't depend on which hours count as normal. On the
-dev grid (notebook 04, section 6) the two windows differ by only 0.01 (0.945 vs 0.936), within the noise;</li>
-<li><strong>C08 and C10 keep their settings</strong> (already the best on dev at H = 12, W = 36) and barely move: 0.76 → 0.74
-and 0.57 → 0.56;</li>
-<li>W = 36 still reaches back to where the drift starts (48 h before a failure) and still contains the part's own
-error code (logged 24 h before), so the window covers the whole precursor;</li>
-<li>a bigger buffer would not work: F1 collapses once the window starts 36 h or more ahead.</li>
+<h3 id="Why-H-=-12,-W-=-36">Why H = 12, W = 36<a class="anchor-link" href="#Why-H-=-12,-W-=-36">¶</a></h3><ul>
+<li><strong>H = 12: half a day of warning.</strong> With H = 0 an alert one hour before a failure would count as a success,
+which leaves no time to act. With H = 12, only alerts at least 12 hours ahead count.</li>
+<li><strong>W = 36: the whole precursor.</strong> Each part's signal starts drifting about 48 hours before it fails, and its own
+error code is logged 24 hours before. A window from 48 to 12 hours before the failure contains both.</li>
+<li><strong>It costs nothing in detection.</strong> On the F1 grid (notebook 04, section 6) the best window anywhere scores 0.948
+and H = 12, W = 36 scores 0.936, within the noise (~±0.02). A bigger buffer would not work: F1 collapses once the
+window starts 36 hours or more ahead.</li>
 </ul>
-<p>The red box in notebook 04, section 6 marks this window on the grid.</p>
 <p><strong>Why 12 hours? Precedent.</strong> No standard prescribes a single number, but the principle and the unit are both
 well established:</p>
 <ul>
@@ -9589,7 +9486,7 @@ A 12-hour lead means the crew on shift when the alert fires can diagnose the pro
 repair, or hand a planned job to the next shift, before the failure.</li>
 </ul>
 <p>The right number for a real line should come from its own repair times and part lead times; 12 hours is a
-sensible default that, here, costs almost no detection performance.</p>
+sensible default.</p>
 <h2 id="12-%C2%B7-What-we-would-do-next">12 · What we would do next<a class="anchor-link" href="#12-%C2%B7-What-we-would-do-next">¶</a></h2><ul>
 <li>Ask whether the look-alike excursions precede maintenance that averted a failure. If so, some "false
 alarms" are really saves.</li>
