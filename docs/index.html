@@ -8013,7 +8013,7 @@ numbers as optimistic and the method as the transferable result.</p>
 </tr>
 <tr>
 <td><strong>Threshold ("the line")</strong></td>
-<td>the level a reading must cross to raise an alert. Always set from normal-operation hours only, usually at <strong>P99</strong>: the level that normal hours cross only 1% of the time.</td>
+<td>the level a reading must cross to raise an alert, set from normal running so that normal hours almost never cross it (section 9, "How the alert lines are set").</td>
 </tr>
 <tr>
 <td><strong>Smoothing</strong></td>
@@ -9351,17 +9351,12 @@ model, seed 7). These are the filters and assumptions applied when scoring them:
 <tr>
 <td>Normal operation</td>
 <td>every hour that is not in the H + W hours before any failure and not muted</td>
-<td>the brief's definition; all thresholds come from these hours only</td>
+<td>the brief's definition; every line is set from dev machines' normal hours (holdout per-machine lines: see below)</td>
 </tr>
 <tr>
-<td>Fleet-wide and per-model thresholds</td>
-<td>fitted on <strong>dev machines' normal hours only</strong></td>
-<td>holdout machines never shape them</td>
-</tr>
-<tr>
-<td>Per-machine thresholds (used by all three kept rules)</td>
-<td>a <strong>dev</strong> machine's line comes from its normal hours; a <strong>holdout</strong> machine's line comes from <strong>all of its own hours</strong> (after warm-up), <em>label-free</em></td>
-<td>a per-machine line needs that machine's own readings, but "normal" is built from failure dates (it leaves out the hours before each failure), and a holdout machine's failure dates must not be used</td>
+<td>Alert lines</td>
+<td>sensor lines are set <strong>per machine</strong> from that machine's own readings (holdout machines: all of their hours, never their failure dates); error-count and part-age lines are <strong>one line for the fleet</strong>, set on dev machines only</td>
+<td>see "How the alert lines are set" below</td>
 </tr>
 <tr>
 <td>Error codes and part ages</td>
@@ -9402,6 +9397,22 @@ of muting: C09's precision moves only from 0.92 to 0.94, and its coverage stays 
 <li><strong>The risk to watch</strong> in a real plant is a bad repair that fails again within a day. If that matters, the mute
 can be shortened (the audit shows it costs little) or replaced by a separate "post-repair check" alarm.</li>
 </ul>
+<h3 id="How-the-alert-lines-are-set">How the alert lines are set<a class="anchor-link" href="#How-the-alert-lines-are-set">¶</a></h3><p>Every rule has two conditions, and each condition compares a number to a line.</p>
+<p><strong>1. The sensor condition uses a line per machine.</strong> Machines differ a little in their normal levels (one
+machine's voltage might hover around 168, another's around 172), so each machine gets its own line: its median
+reading plus 3.09 (C09) or 3.72 (C08, C10) <em>robust spreads</em>. The robust spread measures how much the readings
+normally wobble, and like the median it barely moves when a few hours are unusual. Where the readings come from:</p>
+<ul>
+<li><strong>Dev machines</strong> (used to build and tune the rules): their <strong>normal-operation hours</strong>, i.e. leaving out the
+hours just before a failure and just after a repair. That needs their failure dates, which is fine on dev.</li>
+<li><strong>Holdout machines</strong> (used only to score): <strong>all of their own hours</strong>. In deployment we wouldn't know in advance
+when a machine will fail, so we can't tell which of its hours were "normal"; scoring a holdout machine must not
+use its failure dates either. Because only ~4% of a machine's hours come just before a failure, and the median
+and robust spread shrug off a few unusual hours, the line ends up almost the same.</li>
+</ul>
+<p><strong>2. The error-count and part-age conditions use one line for the whole fleet,</strong> set from the dev machines only:
+"at least one error code in the last 24 h" (C09) or "48 h" (C08), and "part older than its median age since
+replacement, about 31–34 days" (C10). Holdout machines play no part in setting these lines.</p>
 </div>
 </div>
 </div>
@@ -9449,8 +9460,8 @@ version 3, five CSVs. It downloads automatically with
 </tr>
 <tr>
 <td><strong>Thresholds</strong></td>
-<td>percentiles of normal-operation hours only (fleet, per model, per machine), or robust per machine (median + z·MAD)</td>
-<td>the brief requires normal-only thresholds; robust ones resist the look-alike excursions hiding in "normal"</td>
+<td>sensor lines per machine (median + robust spreads); error-count and part-age lines one per fleet</td>
+<td>chosen on dev machines' normal-operation hours, as the brief requires; a holdout machine's per-machine line comes from all its own hours so its failure dates are never used (section 9)</td>
 </tr>
 <tr>
 <td>Selection</td>
