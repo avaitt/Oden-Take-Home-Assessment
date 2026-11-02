@@ -8012,8 +8012,8 @@ numbers as optimistic and the method as the transferable result.</p>
 <td>hours far from any failure: not in any failure's window, not in the 24 h after a failure or repair, and not in the first 24 h of data.</td>
 </tr>
 <tr>
-<td><strong>Threshold ("the line")</strong></td>
-<td>the level a reading must cross to raise an alert, set from normal running so that normal hours almost never cross it (section 9, "How the alert lines are set").</td>
+<td><strong>Alert line</strong> (threshold)</td>
+<td>a <strong>fixed number</strong> that one condition of a rule is compared against. Every hour the rule computes a quantity (e.g. a sensor's 6 h average, or how many error codes were logged in the last 24 h), and the condition is <strong>on</strong> when that quantity is past the line in the fault direction (above it; below it for rotation). A rule alerts in the hours when <strong>both</strong> of its conditions are on. Lines are set once from normal running, so that normal hours almost never cross them, and then held fixed. Section 9, "How the alert lines are set", gives the exact formulas.</td>
 </tr>
 <tr>
 <td><strong>Smoothing</strong></td>
@@ -9397,11 +9397,20 @@ of muting: C09's precision moves only from 0.92 to 0.94, and its coverage stays 
 <li><strong>The risk to watch</strong> in a real plant is a bad repair that fails again within a day. If that matters, the mute
 can be shortened (the audit shows it costs little) or replaced by a separate "post-repair check" alarm.</li>
 </ul>
-<h3 id="How-the-alert-lines-are-set">How the alert lines are set<a class="anchor-link" href="#How-the-alert-lines-are-set">¶</a></h3><p>Every rule has two conditions, and each condition compares a number to a line.</p>
+<h3 id="How-the-alert-lines-are-set">How the alert lines are set<a class="anchor-link" href="#How-the-alert-lines-are-set">¶</a></h3><p>An <strong>alert line</strong> is a fixed number that one condition of a rule is compared against: every hour the rule
+computes a quantity, and the condition is on when the quantity is past the line in the fault direction. Every
+rule has two conditions, so two lines, and it alerts in the hours when both conditions are on.</p>
 <p><strong>1. The sensor condition uses a line per machine.</strong> Machines differ a little in their normal levels (one
-machine's voltage might hover around 168, another's around 172), so each machine gets its own line: its median
-reading plus 3.09 (C09) or 3.72 (C08, C10) <em>robust spreads</em>. The robust spread measures how much the readings
-normally wobble, and like the median it barely moves when a few hours are unusual. Where the readings come from:</p>
+machine's voltage might hover around 168, another's around 172), so each machine gets its own line:</p>
+<blockquote>
+<p><strong>sensor line = median + k × robust spread</strong> (minus, for rotation, whose faults show as a drop)</p>
+</blockquote>
+<p>computed from that machine's 6 h averages, with <strong>k = 3.09 for C09</strong> and <strong>k = 3.72 for C08 and C10</strong>. The
+<strong>robust spread</strong> is 1.4826 × the median absolute distance of the readings from their median: a measure of how
+much the readings normally wobble that, like the median, barely moves when a few hours are unusual. (For
+bell-shaped readings, 3.09 and 3.72 spreads are the levels crossed only 0.1% and 0.01% of the time.) Example: a
+machine whose voltage averages 170 with a robust spread of 6.5 gets a C09 line of 170 + 3.09 × 6.5 ≈ 190.
+Which readings the median and spread come from:</p>
 <ul>
 <li><strong>Dev machines</strong> (used to build and tune the rules): their <strong>normal-operation hours</strong>, i.e. leaving out the
 hours just before a failure and just after a repair. That needs their failure dates, which is fine on dev.</li>
@@ -9410,9 +9419,15 @@ when a machine will fail, so we can't tell which of its hours were "normal"; sco
 use its failure dates either. Because only ~4% of a machine's hours come just before a failure, and the median
 and robust spread shrug off a few unusual hours, the line ends up almost the same.</li>
 </ul>
-<p><strong>2. The error-count and part-age conditions use one line for the whole fleet,</strong> set from the dev machines only:
-"at least one error code in the last 24 h" (C09) or "48 h" (C08), and "part older than its median age since
-replacement, about 31–34 days" (C10). Holdout machines play no part in setting these lines.</p>
+<p><strong>2. The error-count and part-age conditions use one line for the whole fleet,</strong> set from the dev machines'
+normal hours only:</p>
+<ul>
+<li><strong>Error count</strong> (C09: the part's own codes in the last 24 h; C08: any code in the last 48 h): the line is the
+80th percentile of that count in normal running, which is 0, so the condition means <strong>at least one error code</strong>.</li>
+<li><strong>Part age</strong> (C10: hours since the part was last replaced): the line is the median age in normal running, about
+<strong>31–34 days</strong> depending on the part.</li>
+</ul>
+<p>Holdout machines play no part in setting these lines.</p>
 </div>
 </div>
 </div>
