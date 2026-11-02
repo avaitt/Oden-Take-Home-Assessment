@@ -8018,6 +8018,19 @@ numbers as optimistic and the method as the transferable result.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="Why-F1,-and-not-lift-or-coverage-alone">Why F1, and not lift or coverage alone<a class="anchor-link" href="#Why-F1,-and-not-lift-or-coverage-alone">¶</a></h3><p>Each of the brief's three numbers can be made to look good by a rule that is useless in practice:</p>
+<ul>
+<li><strong>Lift alone</strong> rewards a rule that almost never fires: one lucky alert just before a failure gives an enormous
+lift while missing nearly every failure.</li>
+<li><strong>Coverage alone</strong> rewards a rule that is always on: it "catches" every failure, but almost all of its alarms
+are false, and the crew soon ignores it.</li>
+<li><strong>Precision alone</strong> rewards firing only on the most obvious cases, again missing most failures.</li>
+</ul>
+<p>What an operator needs is <strong>both</strong>: most failures caught (coverage) <em>and</em> most alarms real (precision). F1 combines
+the two as their harmonic mean, which stays low unless both are high. For example, "any signal drifts" (C05)
+catches 99% of failures, but only 28% of its alarms are real, so its F1 is just 0.44; the matched signature (C09)
+is high on both and scores 0.92. A plain average would hide that difference (0.64 vs 0.92); F1 doesn't. Lift is
+still checked (each rule must reach at least 2) and reported, but as a sanity check rather than the target.</p>
 <h3 id="What-a-%22gate%22-is">What a "gate" is<a class="anchor-link" href="#What-a-%22gate%22-is">¶</a></h3><p>With 655 versions of the ten ideas tried, some will score well by luck or by quietly using information from
 the future. So before ranking, every idea must pass <strong>four gates</strong> on the dev machines:</p>
 <ol>
