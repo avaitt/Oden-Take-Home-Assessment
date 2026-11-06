@@ -7814,7 +7814,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="06-%C2%B7-Write-up">06 · Write-up<a class="anchor-link" href="#06-%C2%B7-Write-up">¶</a></h1><p><strong>How to read it:</strong> section 1 is the answer; sections 2–3 are the background you need; section 4 is a
+<h1 id="Write-up">Write-up<a class="anchor-link" href="#Write-up">¶</a></h1><p><strong>How to read it:</strong> section 1 is the answer; sections 2–3 are the background you need; section 4 is a
 notebook-by-notebook tour; sections 6 onwards are the write-up proper.</p>
 </div>
 </div>
@@ -7953,7 +7953,9 @@ each part's own sensor signal shifts about <strong>48 hours</strong> before it f
 ~470 times a year <em>without</em> a failure, so a sensor alone can't be trusted (at most ~37% of its alarms are real).
 What separates real from false shifts is <strong>the part's own error code</strong>, logged 24 hours before the failure.
 Alerts are scored on a window of <strong>H = 12, W = 36</strong>: an alert counts if it comes between 48 and 12 hours before a
-failure, so every alert that counts leaves at least half a day to act. The strongest precursor, <strong>C09 "matched
+failure, so every alert that counts leaves at least half a day to act. <strong>By F1 alone, H = 0, W = 48 wins</strong> ("will
+it fail within the next 48 hours?", dev F1 0.945), but I chose <strong>H = 12, W = 36</strong> (0.936) for pragmatism: an alert
+one hour before a failure leaves no time to act, and the 0.01 difference is within the noise. The strongest precursor, <strong>C09 "matched
 signature"</strong> (a part's own signal drifting <em>and</em> its own error code logged), scores <strong>F1 0.94 on machines it never
 saw</strong>: it catches <strong>99%</strong> of failures, <strong>90%</strong> of its alarms are real, and it warns about <strong>24 hours</strong> ahead. Two
 more survive: <strong>C10</strong> (drift on a worn part) warns earlier (~43 h) but is right only 41% of the time, and <strong>C08</strong>
@@ -8489,8 +8491,9 @@ Nine passed every gate; <strong>C07 failed the causal check</strong>. Why the ot
 <li><strong>Kept:</strong> <strong>C09</strong>, <strong>C08</strong> and <strong>C10</strong> (section 6 has their scores and the rules in full).</li>
 <li><strong>Smoothing:</strong> a 6 h average works best; CUSUM is worst.</li>
 <li><strong>Choosing H and W:</strong> one F1 grid of 100 windows. F1 is flat for every window that contains the error code
-logged 24 h before a failure, and collapses once the window starts 36 h or more ahead. The window is
-<strong>H = 12, W = 36</strong> (section 11).</li>
+logged 24 h before a failure, and collapses once the window starts 36 h or more ahead. <strong>By F1 alone, H = 0,
+W = 48 wins</strong> (0.945), but I use <strong>H = 12, W = 36</strong> (0.936) for pragmatism, so every alert leaves half a day to
+act (section 11).</li>
 <li><strong>Every event type:</strong> C09 ranks first for any failure and for each part separately.</li>
 </ul>
 </div>
@@ -9304,7 +9307,7 @@ version 3, five CSVs. It downloads automatically with
 <tr>
 <td><strong>H</strong> (lead time)</td>
 <td><strong>12 h</strong></td>
-<td>every alert that counts leaves at least half a day to act; see "Why H = 12, W = 36" below</td>
+<td>by F1 alone H = 0 wins (with W = 48), but H = 12 is the pragmatic choice: every alert that counts leaves at least half a day to act; see "Why H = 12, W = 36" below</td>
 </tr>
 <tr>
 <td><strong>W</strong> (window)</td>
@@ -9329,12 +9332,15 @@ version 3, five CSVs. It downloads automatically with
 </tbody>
 </table>
 <h3 id="Why-H-=-12,-W-=-36">Why H = 12, W = 36<a class="anchor-link" href="#Why-H-=-12,-W-=-36">¶</a></h3><ul>
+<li><strong>By F1 alone, H = 0, W = 48 wins.</strong> On the F1 grid (notebook 04, section 6), the best window with no buffer is
+H = 0, W = 48 ("will it fail within the next 48 hours?"), with dev F1 0.945. I chose H = 12, W = 36 (0.936) for
+pragmatism, not because it scores higher.</li>
 <li><strong>H = 12: half a day of warning.</strong> With H = 0 an alert one hour before a failure would count as a success,
 which leaves no time to act. With H = 12, only alerts at least 12 hours ahead count.</li>
 <li><strong>W = 36: the whole precursor.</strong> Each part's signal starts drifting about 48 hours before it fails, and its own
 error code is logged 24 hours before. A window from 48 to 12 hours before the failure contains both.</li>
-<li><strong>It costs nothing in detection.</strong> On the F1 grid (notebook 04, section 6) the best window anywhere scores 0.948
-and H = 12, W = 36 scores 0.936, within the noise (~±0.02). A bigger buffer would not work: F1 collapses once the
+<li><strong>The pragmatic choice costs almost nothing in detection.</strong> H = 12, W = 36 scores 0.936 against 0.945 for
+H = 0, W = 48 (and 0.948 for the best cell anywhere), a difference within the noise (~±0.02). A bigger buffer would not work: F1 collapses once the
 window starts 36 hours or more ahead.</li>
 </ul>
 <p><strong>Why 12 hours? Precedent.</strong> No standard prescribes a single number, but the principle and the unit are both
